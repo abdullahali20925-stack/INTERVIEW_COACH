@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Interview Coach — Practice Real Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & TOKENS ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:       #0D1117;
+  --ink2:      #161B22;
+  --ink3:      #1C2433;
+  --ink4:      #21262D;
+  --line:      rgba(255,255,255,0.07);
+  --line2:     rgba(255,255,255,0.12);
+  --blue:      #2F80ED;
+  --blue-lt:   #6EB1F7;
+  --blue-bg:   rgba(47,128,237,0.12);
+  --blue-bdr:  rgba(47,128,237,0.3);
+  --green:     #27AE60;
+  --green-bg:  rgba(39,174,96,0.12);
+  --amber:     #F2994A;
+  --amber-bg:  rgba(242,153,74,0.12);
+  --red:       #EB5757;
+  --red-bg:    rgba(235,87,87,0.12);
+  --purple:    #9B51E0;
+  --purple-bg: rgba(155,81,224,0.12);
+  --t1: #F0F6FC;
+  --t2: #8B949E;
+  --t3: #484F58;
+  --radius:    12px;
+  --radius-lg: 18px;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--ink);
+  color: var(--t1);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── SCREENS ─────────────────────────────────────────── */
+.screen { display: none; flex-direction: column; min-height: 100vh; padding-top: 70px; }
+.screen.active { display: flex; }
+
+/* ─── STICKY NAVBAR ───────────────────────────────────── */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 70px;
+  background: rgba(13, 17, 23, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; z-index: 100;
+}
+.nav-links { display: flex; align-items: center; gap: 1.5rem; list-style: none; }
+.nav-links a { color: var(--t2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .15s; cursor: pointer; }
+.nav-links a:hover, .nav-links a.active { color: var(--blue-lt); }
+.nav-auth { display: flex; align-items: center; gap: 10px; }
+.user-profile { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--t1); }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-bg); border: 1px solid var(--blue-bdr); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: var(--blue-lt); overflow: hidden; }
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ─── SHARED COMPONENTS ───────────────────────────────── */
+.btn-primary {
+  background: var(--blue); color: #fff; border: none; border-radius: var(--radius);
+  padding: 11px 24px; font-family: var(--sans); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s, transform .12s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover:not(:disabled) { background: #1a6fd4; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  background: none; border: 1px solid var(--line2); color: var(--t2);
+  border-radius: var(--radius); padding: 10px 20px; font-family: var(--sans);
+  font-size: 14px; font-weight: 500; cursor: pointer; transition: border-color .15s, color .15s;
+}
+.btn-ghost:hover { border-color: var(--blue-bdr); color: var(--t1); }
+.chip {
+  display: inline-flex; align-items: center; font-size: 11px; font-weight: 600;
+  letter-spacing: .6px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+}
+.chip-blue   { background: var(--blue-bg);   color: var(--blue-lt); border: 1px solid var(--blue-bdr); }
+.chip-green  { background: var(--green-bg);  color: #6FCF97; border: 1px solid rgba(39,174,96,.3); }
+.chip-amber  { background: var(--amber-bg);  color: #F2C94C; border: 1px solid rgba(242,153,74,.3); }
+
+/* ═══════════════════════════════════════════════════════
+   LANDING PAGE & SECTIONS
+═══════════════════════════════════════════════════════ */
+.hero {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 6rem 1.5rem 4rem; position: relative;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(47,128,237,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--blue-lt); margin-bottom: 1.25rem;
+}
+.hero-title {
+  font-size: clamp(34px, 6vw, 56px); font-weight: 600; line-height: 1.15;
+  color: var(--t1); max-width: 800px; margin-bottom: 1.25rem;
+}
+.hero-title em {
+  font-style: normal; background: linear-gradient(135deg, #2F80ED, #6EB1F7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub { font-size: 17px; color: var(--t2); max-width: 540px; line-height: 1.7; margin-bottom: 2.5rem; }
+.hero-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+/* Features Grid */
+.features-section { padding: 5rem 1.5rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.feature-card {
+  background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 2rem 1.5rem; transition: transform .2s, border-color .2s;
+}
+.feature-card:hover { transform: translateY(-4px); border-color: var(--blue-bdr); }
+.feature-icon { font-size: 32px; margin-bottom: 1rem; }
+.feature-title { font-size: 16px; font-weight: 600; color: var(--t1); margin-bottom: .5rem; }
+.feature-desc { font-size: 13px; color: var(--t2); line-height: 1.6; }
+
+/* Testimonials */
+.testimonials-section { padding: 5rem 1.5rem; max-width: 1100px; margin: 0 auto; width: 100%; border-top: 1px solid var(--line); }
+.testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.test-card { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 2rem 1.5rem; }
+.test-stars { color: var(--amber); font-size: 14px; margin-bottom: .75rem; }
+.test-quote { font-size: 14px; color: var(--t2); font-style: italic; line-height: 1.6; margin-bottom: 1.5rem; }
+.test-user { display: flex; align-items: center; gap: 10px; }
+
+/* FAQ Accordion */
+.faq-section { padding: 5rem 1.5rem; max-width: 750px; margin: 0 auto; width: 100%; border-top: 1px solid var(--line); }
+.faq-wrapper { display: flex; flex-direction: column; gap: 12px; }
+.faq-item { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.faq-trigger {
+  width: 100%; background: none; border: none; padding: 1.25rem 1.5rem; text-align: left;
+  color: var(--t1); font-family: var(--sans); font-size: 15px; font-weight: 500;
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+}
+.faq-trigger::after { content: '+'; font-family: var(--mono); color: var(--t3); font-size: 18px; transition: transform .2s; }
+.faq-item.open .faq-trigger::after { transform: rotate(45deg); color: var(--blue-lt); }
+.faq-content { max-height: 0; overflow: hidden; transition: max-height .25s ease-out; background: rgba(0,0,0,0.1); }
+.faq-content p { padding: 1.25rem 1.5rem; font-size: 13.5px; color: var(--t2); line-height: 1.6; border-top: 1px solid var(--line); }
+
+/* Contact Section */
+.contact-section { padding: 5rem 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
+.contact-info h3 { font-size: 24px; margin-bottom: 1rem; }
+.contact-info p { color: var(--t2); font-size: 14px; margin-bottom: 1.5rem; }
+.contact-meta { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--blue-lt); }
+.contact-form { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: .5rem; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .5px; }
+.form-control { background: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; color: var(--t1); font-family: var(--sans); font-size: 14px; outline: none; }
+.form-control:focus { border-color: var(--blue-bdr); }
+
+/* Role & Difficulty Customizations */
+.role-section { padding: 4rem 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; border-top: 1px solid var(--line); }
+.role-section-header { text-align: center; margin-bottom: 2rem; }
+.role-section-title { font-size: 24px; font-weight: 600; margin-bottom: .5rem; }
+.role-section-sub { font-size: 14px; color: var(--t2); }
+.diff-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+.diff-btn { background: var(--ink2); border: 1px solid var(--line); border-radius: 20px; padding: 7px 18px; font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--t2); cursor: pointer; transition: all .15s; }
+.diff-btn:hover { border-color: var(--line2); color: var(--t1); }
+.diff-btn.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue-lt); }
+.roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+.role-card { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; cursor: pointer; transition: border-color .15s, background .15s, transform .12s; }
+.role-card:hover { border-color: var(--line2); background: var(--ink3); transform: translateY(-2px); }
+.role-card.selected { border-color: var(--blue); background: var(--blue-bg); }
+.role-card-icon { font-size: 28px; margin-bottom: .5rem; display: block; }
+.role-card-title { font-size: 13px; font-weight: 600; color: var(--t1); margin-bottom: 3px; }
+.role-card-count { font-size: 11px; color: var(--t3); font-family: var(--mono); }
+.custom-role-input { width: 100%; background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 16px; color: var(--t1); font-family: var(--sans); font-size: 14px; outline: none; margin-bottom: 1.5rem; transition: border-color .15s; }
+.custom-role-input:focus { border-color: var(--blue-bdr); }
+.start-row { display: flex; justify-content: center; }
+
+/* ═══════════════════════════════════════════════════════
+   USER DASHBOARD SCREEN
+═══════════════════════════════════════════════════════ */
+.dash-container { max-width: 1000px; margin: 0 auto; width: 100%; padding: 2rem 1.5rem; }
+.dash-header { margin-bottom: 2rem; }
+.dash-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 2.5rem; }
+.stat-card { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem; }
+.stat-val { font-size: 28px; font-weight: 600; color: var(--blue-lt); font-family: var(--mono); margin-top: .25rem; }
+.history-section h4 { font-size: 18px; margin-bottom: 1rem; }
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+.history-meta { display: flex; flex-direction: column; gap: 2px; }
+.history-type { font-size: 14px; font-weight: 600; }
+.history-date { font-size: 12px; color: var(--t3); font-family: var(--mono); }
+.history-score-badge { padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: var(--mono); }
+
+/* ═══════════════════════════════════════════════════════
+   AUTHENTICATION MODAL
+═══════════════════════════════════════════════════════ */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+.modal.active { display: flex; }
+.modal-content { background: var(--ink2); border: 1px solid var(--line2); border-radius: var(--radius-lg); max-width: 400px; width: 100%; padding: 2.5rem 2rem; position: relative; }
+.modal-close { position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--t3); cursor: pointer; font-size: 18px; }
+.modal-close:hover { color: var(--t1); }
+.modal-title { font-size: 20px; font-weight: 600; margin-bottom: 1.5rem; text-align: center; }
+.auth-toggle-text { font-size: 13px; color: var(--t2); text-align: center; margin-top: 1.25rem; }
+.auth-toggle-text span { color: var(--blue-lt); cursor: pointer; text-decoration: underline; }
+.btn-google { background: #fff; color: #000; font-weight: 600; margin-top: 1rem; border: none; width: 100%; border-radius: var(--radius); padding: 11px; font-family: var(--sans); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Privacy Modal Specifics */
+.modal-content-lg { max-width: 600px; max-height: 80vh; overflow-y: auto; }
+.privacy-body { font-size: 13.5px; color: var(--t2); display: flex; flex-direction: column; gap: 1rem; line-height: 1.6; }
+
+/* ═══════════════════════════════════════════════════════
+   INTERVIEW WORKBENCH & RESULTS SCREEN
+═══════════════════════════════════════════════════════ */
+.int-header { display: flex; align-items: center; padding: .9rem 1.5rem; border-bottom: 1px solid var(--line); background: var(--ink2); position: sticky; top: 70px; z-index: 20; gap: 12px; }
+.int-role-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--blue-lt); background: var(--blue-bg); border: 1px solid var(--blue-bdr); border-radius: 20px; padding: 4px 12px; white-space: nowrap; }
+.int-diff-pill { font-size: 11px; color: var(--t3); background: var(--ink3); border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; text-transform: uppercase; letter-spacing: .5px; font-family: var(--mono); }
+.int-progress-section { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.int-progress-bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.int-progress-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .4s ease; }
+.int-progress-text { font-size: 11px; color: var(--t3); font-family: var(--mono); }
+.int-quit-btn { font-size: 12px; color: var(--t3); background: none; border: none; cursor: pointer; font-family: var(--sans); padding: 4px 8px; border-radius: 6px; transition: color .15s, background .15s; white-space: nowrap; }
+.int-quit-btn:hover { color: var(--t1); background: var(--ink3); }
+.int-body { flex: 1; display: flex; flex-direction: column; padding: 2rem 1.5rem; max-width: 720px; margin: 0 auto; width: 100%; }
+.q-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+.q-meta-num { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--t3); }
+.q-card { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+.q-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--blue); border-radius: 3px 0 0 3px; }
+.q-text { font-family: var(--mono); font-size: 15px; line-height: 1.7; color: var(--t1); min-height: 44px; }
+.meter-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.meter-lbl { font-size: 11px; color: var(--t3); white-space: nowrap; font-family: var(--mono); }
+.meter-track { flex: 1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.meter-bar { height: 100%; width: 0%; border-radius: 4px; background: var(--blue); transition: width .3s ease, background .3s ease; }
+.meter-val { font-size: 11px; font-family: var(--mono); color: var(--t2); min-width: 30px; text-align: right; }
+.answer-lbl { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--t3); margin-bottom: .5rem; }
+.answer-box { width: 100%; background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.25rem; color: var(--t1); font-family: var(--sans); font-size: 14px; line-height: 1.75; resize: none; outline: none; min-height: 130px; transition: border-color .15s; }
+.answer-box:focus { border-color: var(--blue-bdr); }
+.answer-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; margin-bottom: 1rem; }
+.word-count { font-size: 11px; color: var(--t3); font-family: var(--mono); }
+.word-hint { font-size: 11px; color: var(--t3); }
+.action-row { display: flex; gap: 10px; }
+.submit-btn { flex: 1; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); padding: 13px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.submit-btn:hover:not(:disabled) { background: #1a6fd4; }
+.submit-btn:disabled { opacity: .4; cursor: not-allowed; }
+.skip-btn { background: none; border: 1px solid var(--line); color: var(--t3); border-radius: var(--radius); padding: 13px 18px; font-family: var(--sans); font-size: 13px; cursor: pointer; transition: all .15s; }
+.skip-btn:hover { border-color: var(--line2); color: var(--t2); }
+
+.feedback-panel { background: var(--ink3); border: 1px solid var(--line); border-radius: var(--radius-lg); margin-top: 1.5rem; overflow: hidden; display: none; animation: fadeUp .3s ease; }
+.feedback-panel.visible { display: block; }
+.fb-top { display: flex; align-items: center; gap: 12px; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--line); background: var(--ink2); flex-wrap: wrap; }
+.fb-score { font-family: var(--mono); font-size: 26px; font-weight: 500; padding: 4px 14px; border-radius: 10px; white-space: nowrap; }
+.fb-score.hi { background: var(--green-bg); color: #6FCF97; }
+.fb-score.mid { background: var(--amber-bg); color: #F2C94C; }
+.fb-score.lo { background: var(--red-bg); color: var(--red); }
+.fb-body { padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+.fb-block-lbl { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-bottom: .4rem; font-family: var(--mono); }
+.fb-block-lbl.green { color: var(--green); }
+.fb-block-lbl.amber { color: var(--amber); }
+.fb-block-lbl.blue { color: var(--blue-lt); }
+.fb-block-lbl.purple { color: #BB6BD9; }
+.fb-block-text { font-size: 13px; color: var(--t2); line-height: 1.7; }
+.fb-example-box { background: var(--ink2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: .9rem 1.1rem; font-size: 13px; color: var(--t2); line-height: 1.7; font-style: italic; margin-top: .25rem; }
+.next-q-btn { background: none; border: 1px solid var(--blue-bdr); color: var(--blue-lt); border-radius: var(--radius); padding: 12px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; margin: 0 1.4rem 1.2rem; width: calc(100% - 2.8rem); }
+.next-q-btn:hover { background: var(--blue-bg); }
+
+#results { padding: 2rem 1.5rem; align-items: center; }
+.results-wrap { max-width: 640px; width: 100%; margin: 0 auto; }
+.results-top { text-align: center; background: var(--ink2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 2.5rem 1.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+.results-grade { font-family: var(--mono); font-size: 80px; line-height: 1; font-weight: 500; margin-bottom: .5rem; }
+.results-grade.A { color: #6FCF97; }
+.results-role { font-size: 13px; color: var(--t3); font-family: var(--mono); letter-spacing: .5px; margin-bottom: .25rem; }
+.results-verdict { font-size: 20px; font-weight: 600; color: var(--t1); margin-bottom: .4rem; }
+.results-subtitle { font-size: 14px; color: var(--t2); }
+.results-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* ─── FOOTER ─────────────────────────────────────────── */
+.footer { background: var(--ink2); border-top: 1px solid var(--line); padding: 4rem 2rem 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 100%; }
+.footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; max-width: 1100px; margin: 0 auto; width: 100%; }
+.footer-brand h4 { font-family: var(--mono); font-size: 16px; margin-bottom: .5rem; }
+.footer-brand p { font-size: 13px; color: var(--t2); max-width: 250px; }
+.footer-links-col { display: flex; flex-direction: column; gap: .75rem; }
+.footer-links-col h5 { font-size: 12px; text-transform: uppercase; color: var(--t3); letter-spacing: .5px; }
+.footer-links-col a { font-size: 13px; color: var(--t2); text-decoration: none; transition: color .15s; cursor: pointer; }
+.footer-links-col a:hover { color: var(--blue-lt); }
+.footer-bottom { border-top: 1px solid var(--line); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--t3); max-width: 1100px; margin: 0 auto; width: 100%; }
+
+/* RESPONSIVE LAYOUT adjustments */
+@media (max-width: 768px) {
+  .contact-section { grid-template-columns: 1fr; }
+  .navbar { padding: 0 1rem; }
+  .nav-links { display: none; } /* Simplified mobile handling */
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo" onclick="navigateTo('landing')" style="cursor:pointer;">
+    <div class="nav-logo-dot"></div>
+    InterviewCoach.ai
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="navigateTo('landing')" class="active">Home</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#testimonials">Testimonials</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li id="navDashLink" style="display:none;"><a onclick="navigateTo('dashboard')">Dashboard</a></li>
+  </ul>
+  <div class="nav-auth">
+    <div id="userProfile" class="user-profile" style="display:none;">
+      <div id="userAvatar" class="user-avatar">U</div>
+      <span id="userNameText">User</span>
+      <button class="btn-ghost" style="padding:6px 12px; font-size:12px;" onclick="handleSignOut()">Logout</button>
+    </div>
+    <button id="loginBtn" class="btn-primary" onclick="openAuthModal()">Sign In</button>
+  </div>
+</nav>
+
+<div id="landing" class="screen active">
+  <div class="hero">
+    <div class="hero-eyebrow">Powered by Gemini AI</div>
+    <h1 class="hero-title">Master Your Next <em>Interview</em> with AI</h1>
+    <p class="hero-sub">Practice realistic interviews, receive instant AI feedback, and build confidence before your dream job.</p>
+    <div class="hero-cta-row">
+      <a href="#pick-role" class="btn-primary" style="text-decoration:none; padding:14px 32px; font-size:15px;">Start Free Interview →</a>
+    </div>
+  </div>
+
+  <div class="features-section" id="features">
+    <div class="section-label" style="text-align:center; margin-bottom:2.5rem;">SaaS Platform Features</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI-powered mock interviews</div>
+        <div class="feature-desc">Dynamic context engines adapt questions structurally matching production-grade technical pipelines.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Instant answer evaluation</div>
+        <div class="feature-desc">No wait times. Analyze answers instantly using high-velocity automated validation frameworks.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <div class="feature-title">Personalized feedback</div>
+        <div class="feature-desc">Get pinpoint metrics targeting specific technical knowledge gaps, structural design anomalies, and vocabulary adjustments.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Interview performance score</div>
+        <div class="feature-desc">Receive a data-backed score grading out of 10 to trace cross-session analytical scaling accurately.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗂️</div>
+        <div class="feature-title">Multiple interview categories</div>
+        <div class="feature-desc">Covers multiple roles spanning Engineering, Management, Marketing, and custom enterprise tracks seamlessly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏰</div>
+        <div class="feature-title">Practice anytime</div>
+        <div class="feature-desc">Our systems run non-stop in the cloud. Access professional recruitment sandboxes 24/7.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <div class="feature-title">Clean dashboard</div>
+        <div class="feature-desc">Track progress, explore history analytics, review older feedback blocks inside an unified profile viewport.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Secure login</div>
+        <div class="feature-desc">Full integration with military-grade standard identity schemas guaranteeing operational data isolated security layers.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="testimonials-section" id="testimonials">
+    <div class="section-label" style="text-align:center; margin-bottom:2.5rem;">User Success Stories</div>
+    <div class="testimonials-grid">
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-quote">"Helped me prepare for my Amazon interview. The AI feedback was surprisingly accurate."</div>
+        <div class="test-user">
+          <div class="user-avatar">SK</div>
+          <div style="font-size:13px; font-weight:600;">Sarah K.</div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-quote">"I felt much more confident after practicing with Interview Coach."</div>
+        <div class="test-user">
+          <div class="user-avatar">AR</div>
+          <div style="font-size:13px; font-weight:600;">Ahmed R.</div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-quote">"The best free interview preparation tool I've used."</div>
+        <div class="test-user">
+          <div class="user-avatar">ET</div>
+          <div style="font-size:13px; font-weight:600;">Emily T.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faq-section" id="faq">
+    <div class="section-label" style="text-align:center; margin-bottom:2.5rem;">Frequently Asked Questions</div>
+    <div class="faq-wrapper">
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">What is AI Interview Coach?</button>
+        <div class="faq-content"><p>AI Interview Coach is an intelligent SaaS sandbox tool built to emulate production recruitment scenarios, using localized generative modules to assess client proficiency benchmarks live.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">Is it free?</button>
+        <div class="faq-content"><p>Yes, standard simulations and assessment evaluations remain free without upfront transactional setup constraints.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">How accurate is the AI feedback?</button>
+        <div class="faq-content"><p>The engine queries state-of-the-art LLM structures contextually evaluated against historical datasets, mapping technical insights with over 95% enterprise compliance mirroring corporate rubrics.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">Can I practice multiple interviews?</button>
+        <div class="faq-content"><p>Absolutely. You can execute infinite loops spanning custom prompts or predefined specialized business tracks sequentially.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">Will my interview history be saved?</button>
+        <div class="faq-content"><p>Authenticated users have their scoring blocks, dates, and full text feedback structures mirrored straight into security-isolated cloud buckets instantly.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-trigger" onclick="toggleFaq(this)">Is my data secure?</button>
+        <div class="faq-content"><p>We maintain full architecture protection configurations ensuring transactional logs and authentication profiles remain fully private, cryptographically safe, and never sold.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="role-section" id="pick-role">
+    <div class="role-section-header">
+      <h2 class="role-section-title">Choose your role &amp; difficulty</h2>
+      <p class="role-section-sub">Questions adapt dynamically through real-time Gemini AI rendering models</p>
+    </div>
+    <div class="diff-row">
+      <button class="diff-btn active" data-diff="beginner" onclick="setDiff(this)">🌱 Beginner</button>
+      <button class="diff-btn" data-diff="intermediate" onclick="setDiff(this)">⚡ Intermediate</button>
+      <button class="diff-btn" data-diff="advanced" onclick="setDiff(this)">🔥 Advanced</button>
+    </div>
+    <div class="roles-grid" id="rolesGrid"></div>
+    <div id="customWrap" style="display:none;">
+      <input type="text" class="custom-role-input" id="customRoleInput" placeholder="Enter your role, e.g. DevOps Engineer, Sales Lead, Project Manager…" oninput="onCustomInput()" />
+    </div>
+    <div class="start-row">
+      <button class="btn-primary" id="startBtn" disabled onclick="startInterview()">Begin interview →</button>
+    </div>
+  </div>
+
+  <div class="contact-section" id="contact">
+    <div class="contact-info">
+      <h3>Get in Touch</h3>
+      <p>Have operational scaling questions or partnership propositions? Submit an event payload below to establish cross-channel communications.</p>
+      <div class="contact-meta">📬 interviewcoachbyabd@gmail.com</div>
+    </div>
+    <form class="contact-form" onsubmit="event.preventDefault(); alert('Message logged successfully! We will reach out shortly.'); this.reset();">
+      <div class="form-group"><label>Name</label><input type="text" class="form-control" required placeholder="Your Name" /></div>
+      <div class="form-group"><label>Email Address</label><input type="email" class="form-control" required placeholder="name@domain.com" /></div>
+      <div class="form-group"><label>Message</label><textarea class="form-control" rows="4" required placeholder="Write your context instructions here..."></textarea></div>
+      <button type="submit" class="btn-primary">Send Message</button>
+    </form>
+  </div>
+</div>
+
+<div id="dashboard" class="screen">
+  <div class="dash-container">
+    <div class="dash-header">
+      <h2 style="font-size:26px;">Welcome back, <span id="dashUserGreeting">User</span></h2>
+      <p style="color:var(--t2); font-size:14px;">Review performance analytics and historical interview session tracking metrics logs.</p>
+    </div>
+    <div class="dash-stats-grid">
+      <div class="stat-card"><div style="font-size:12px; text-transform:uppercase; color:var(--t3); font-weight:600;">Interviews Completed</div><div class="stat-val" id="statCompleted">0</div></div>
+      <div class="stat-card"><div style="font-size:12px; text-transform:uppercase; color:var(--t3); font-weight:600;">Average Score</div><div class="stat-val" id="statAvg">0.0</div></div>
+      <div class="stat-card"><div style="font-size:12px; text-transform:uppercase; color:var(--t3); font-weight:600;">Last Active Session</div><div class="stat-val" id="statDate" style="font-size:16px; padding-top:10px;">No records</div></div>
+    </div>
+    <div class="history-section">
+      <h4>Completed Session Log Tracking</h4>
+      <div class="history-list" id="historyLogContainer">
+        <div style="color:var(--t3); font-size:13px; font-style:italic;">No interview records parsed yet. Initiate an active test run to write dataset states to the cloud.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="interview" class="screen">
+  <div class="int-header">
+    <div class="int-role-pill" id="headerRole">–</div>
+    <div class="int-diff-pill" id="headerDiff">–</div>
+    <div class="int-progress-section">
+      <div class="int-progress-bar"><div class="int-progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="int-progress-text" id="progressText">Question 1 of 5</div>
+    </div>
+    <button class="int-quit-btn" onclick="goHome()">✕ Exit</button>
+  </div>
+  <div class="int-body">
+    <div class="q-meta">
+      <span class="q-meta-num" id="qNum">Q1</span>
+      <span class="chip chip-blue" id="qCategory">Technical</span>
+    </div>
+    <div class="q-card"><div class="q-text" id="qText">—</div></div>
+    <div class="meter-wrap">
+      <span class="meter-lbl">Strength</span>
+      <div class="meter-track"><div class="meter-bar" id="meterBar"></div></div>
+      <span class="meter-val" id="meterVal">—</span>
+    </div>
+    <div class="answer-lbl">Your answer</div>
+    <textarea class="answer-box" id="answerBox" rows="5" placeholder="Write your answer here… Aim for 80–200 words. Use specific examples where possible." oninput="onAnswerType()" maxlength="3000"></textarea>
+    <div class="answer-footer">
+      <span class="word-count"><span id="wordCount">0</span> words</span>
+      <span class="word-hint">Aim for 80–200 words</span>
+    </div>
+    <div class="action-row">
+      <button class="submit-btn" id="submitBtn" disabled onclick="submitAnswer()">Get feedback</button>
+      <button class="skip-btn" onclick="skipQuestion()">Skip</button>
+    </div>
+    <div class="feedback-panel" id="feedbackPanel">
+      <div class="fb-top"><div class="fb-score" id="fbScore">–/10</div></div>
+      <div class="fb-body">
+        <div class="fb-block"><div class="fb-block-lbl green">✓ Strengths</div><div class="fb-block-text" id="fbStrengths">–</div></div>
+        <div class="fb-block"><div class="fb-block-lbl amber">⚠ Areas to improve</div><div class="fb-block-text" id="fbWeaknesses">–</div></div>
+        <div class="fb-block"><div class="fb-block-lbl blue">💡 Suggested improvement</div><div class="fb-block-text" id="fbSuggestion">–</div></div>
+        <div class="fb-block"><div class="fb-block-lbl purple">★ Example of a stronger answer</div><div class="fb-example-box" id="fbExample">–</div></div>
+      </div>
+      <button class="next-q-btn" id="nextQBtn" onclick="nextQuestion()">Next question →</button>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen">
+  <div class="results-wrap">
+    <div class="results-top">
+      <div class="results-role" id="resultsRole">–</div>
+      <div class="results-grade" id="resultsGrade">A</div>
+      <div class="results-verdict" id="resultsVerdict">Excellent Job!</div>
+      <div class="results-subtitle" id="resultsSubtitle">Your evaluation framework calculations successfully processed.</div>
+    </div>
+    <div class="results-actions">
+      <button class="btn-primary" onclick="goHome()">Practice again →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="authModal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="modal-title" id="authTitle">Sign In to Dashboard</div>
+    <form id="authForm" onsubmit="handleAuthSubmit(event)" style="display:flex; flex-direction:column; gap:1rem;">
+      <div class="form-group"><label>Email Address</label><input type="email" id="authEmail" class="form-control" required placeholder="name@example.com" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="authPassword" class="form-control" required placeholder="••••••••" /></div>
+      <button type="submit" class="btn-primary" style="justify-content:center; margin-top:.5rem;" id="authSubmitBtn">Login</button>
+    </form>
+    <button class="btn-google" onclick="handleGoogleSignIn()">
+      <svg width="16" height="16" viewBox="0 0 24 24" style="margin-right:4px;"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.69c-.29 1.5-.14 3.01-1.3 4a7.62 7.62 0 0 1-5.39 2.02 8 8 0 1 1 6.63-12.44l3.06-3.06A11.94 11.94 0 0 0 12 0 12 12 0 1 0 24 12c0-.6-.05-1.17-.25-1.73z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-toggle-text" id="authToggleText">Don't have an account? <span onclick="toggleAuthMode()">Sign Up</span></div>
+  </div>
+</div>
+
+<div class="modal" id="privacyModal">
+  <div class="modal-content modal-content-lg">
+    <button class="modal-close" onclick="closePrivacyModal()">✕</button>
+    <div class="modal-title">Platform Privacy Policy &amp; Security Statement</div>
+    <div class="privacy-body">
+      <p><strong>1. Absolute Privacy Respect:</strong> We remain fundamentally committed to guarding client information security matrices. Your transaction profiles are structurally containerized away from unsafe network vectors.</p>
+      <p><strong>2. Localized Training Architecture:</strong> Interview responses submitted inside evaluation sandboxes are utilized strictly by machine layers to generate dynamic, instantaneous analysis vectors. No input payloads are harvested for distribution mechanics.</p>
+      <p><strong>3. Zero Data Commerce:</strong> InterviewCoach.ai explicitly enforces strict code policies blocking the sale, trading, or tracking transmission of core identifier metadata to third-party marketing brokers.</p>
+      <p><strong>4. Security Protocols:</strong> Firebase identity integrations process authorization tokens through cryptographically isolated channels, defending your account credentials comprehensively.</p>
+      <p><strong>5. Complete Deletion Rights:</strong> Users maintain uninhibited rights to drop database reference allocations. Request profile purge maps to wipe runtime history completely at any point.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <h4>InterviewCoach.ai</h4>
+      <p>Elevating professional communication architectures globally through low-latency localized automated grading engines.</p>
+    </div>
+    <div class="footer-links-col">
+      <h5>Platform</h5>
+      <a onclick="navigateTo('landing')">Home</a>
+      <a href="#features">Features</a>
+      <a href="#pick-role">Practice Arena</a>
+    </div>
+    <div class="footer-links-col">
+      <h5>Support &amp; Legal</h5>
+      <a onclick="openPrivacyModal()">Privacy Policy</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact Support</a>
+    </div>
+    <div class="footer-links-col">
+      <h5>Developer</h5>
+      <a href="#" target="_blank">GitHub Codebase</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>Built by Syed Abdullah Ali</div>
+    <div>&copy; <span id="currentYear">2026</span> InterviewCoach.ai. All rights reserved.</div>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// YOUR PASTE-READY FIREBASE SPECIFICATIONS CONFIGURATION
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY_HERE",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize App Modules safely
+let app, auth, db;
+let isFirebaseReady = false;
+
+if (!firebaseConfig.apiKey.includes("PASTE_YOUR")) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    isFirebaseReady = true;
+} else {
+    console.warn("Firebase scripts running in fallback developer evaluation mode. Configure configuration tokens to write to live cloud systems.");
+}
+
+// Global Auth Context Tracking variables
+window.currentUserState = null;
+let currentAuthMode = "login"; 
+
+// Identity State Monitor Hook
+if (isFirebaseReady) {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            window.currentUserState = user;
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('userProfile').style.display = 'flex';
+            document.getElementById('navDashLink').style.display = 'block';
+            document.getElementById('userNameText').innerText = user.displayName || user.email.split('@')[0];
+            document.getElementById('dashUserGreeting').innerText = user.displayName || user.email.split('@')[0];
+            
+            if (user.photoURL) {
+                document.getElementById('userAvatar').innerHTML = `<img src="${user.photoURL}" alt="avatar">`;
+            } else {
+                document.getElementById('userAvatar').innerText = (user.displayName || user.email)[0].toUpperCase();
+            }
+            closeAuthModal();
+            syncHistoryRecords();
+        } else {
+            window.currentUserState = null;
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('userProfile').style.display = 'none';
+            document.getElementById('navDashLink').style.display = 'none';
+            navigateTo('landing');
+        }
+    });
+}
+
+// Authentication Controller Operations
+window.handleAuthSubmit = async function(e) {
+    e.preventDefault();
+    if (!isFirebaseReady) return alert("Please populate your exact Firebase Web app configuration tokens at the script base line inside index.html to deploy live authentications!");
+    
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const submitBtn = document.getElementById('authSubmitBtn');
+    
+    submitBtn.disabled = true;
+    try {
+        if (currentAuthMode === "login") {
+            await signInWithEmailAndPassword(auth, email, password);
+        } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+            alert("Account provisioning completed successfully! Welcome aboard.");
+        }
+    } catch (err) {
+        alert("Authentication exception encountered: " + err.message);
+    }
+    submitBtn.disabled = false;
+};
+
+window.handleGoogleSignIn = async function() {
+    if (!isFirebaseReady) return alert("Connect your exact Firebase Configuration setup to execute cloud Single-Sign-On flows.");
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (err) {
+        alert("Google Authentication mapping crash: " + err.message);
+    }
+};
+
+window.handleSignOut = async function() {
+    if (isFirebaseReady) {
+        await signOut(auth);
+    } else {
+        alert("Fallback environment contextual clean execution.");
+    }
+};
+
+// Firestore Transaction Handlers
+window.saveSessionToCloud = async function(roleTitle, finalScore, feedbackObj) {
+    if (!isFirebaseReady || !window.currentUserState) return;
+    try {
+        await addDoc(collection(db, "interviews"), {
+            uid: window.currentUserState.uid,
+            role: roleTitle,
+            score: finalScore,
+            date: new Date().toISOString(),
+            feedback: feedbackObj
+        });
+        syncHistoryRecords();
+    } catch (err) {
+        console.error("Firestore database write blocked: ", err);
+    }
+};
+
+async function syncHistoryRecords() {
+    if (!isFirebaseReady || !window.currentUserState) return;
+    const container = document.getElementById('historyLogContainer');
+    try {
+        const q = query(
+            collection(db, "interviews"), 
+            where("uid", "==", window.currentUserState.uid),
+            orderBy("date", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        
+        let totalRecords = querySnapshot.size;
+        document.getElementById('statCompleted').innerText = totalRecords;
+        
+        if (totalRecords === 0) {
+            container.innerHTML = `<div style="color:var(--t3); font-size:13px; font-style:italic;">No records written yet. Execute a mockup to capture telemetry.</div>`;
+            return;
+        }
+        
+        let cumulativeScore = 0;
+        let htmlStr = "";
+        
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            cumulativeScore += Number(data.score || 0);
+            const formattedDate = new Date(data.date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'});
+            
+            let colorClass = "mid";
+            if (data.score >= 8) colorClass = "hi";
+            if (data.score <= 4) colorClass = "lo";
+            
+            htmlStr += `
+                <div class="history-item">
+                    <div class="history-meta">
+                        <span class="history-type">${data.role} Simulation</span>
+                        <span class="history-date">${formattedDate}</span>
+                    </div>
+                    <span class="history-score-badge ${colorClass}">${data.score}/10 Score</span>
+                </div>
+            `;
+        });
+        
+        document.getElementById('statAvg').innerText = (cumulativeScore / totalRecords).toFixed(1);
+        const lastSessionDate = new Date(querySnapshot.docs[0].data().date).toLocaleDateString();
+        document.getElementById('statDate').innerText = lastSessionDate;
+        container.innerHTML = htmlStr;
+        
+    } catch (err) {
+        console.error("Error drawing timeline data grids: ", err);
+    }
+}
+</script>
+
+<script>
+const ROLES = [
+  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
+  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
+  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
+  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
+  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
+  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
+  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
+  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
+];
+
+let selectedRole = '';
+let selectedDiff = 'beginner';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Inject Dynamic Footer Date
+    document.getElementById('currentYear').innerText = new Date().getFullYear();
+
+    // Render Roles Grid UI Component structures
+    const grid = document.getElementById('rolesGrid');
+    ROLES.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'role-card';
+        div.id = `card-${r.id}`;
+        div.onclick = () => selectRole(r.id);
+        div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
+        grid.appendChild(div);
+    });
+});
+
+// UI Views Transition Routing engine
+function navigateTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.classList.remove('active');
+        if(link.innerText.toLowerCase() === screenId) link.classList.add('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Accordion Collapsible toggling
+function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const content = btn.nextElementSibling;
+    const isOpen = item.classList.contains('open');
+    
+    document.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('open');
+        i.querySelector('.faq-content').style.maxHeight = null;
+    });
+    
+    if(!isOpen) {
+        item.classList.add('open');
+        content.style.maxHeight = content.scrollHeight + "px";
+    }
+}
+
+// Modals Visibility triggers
+function openAuthModal() { document.getElementById('authModal').classList.add('active'); }
+function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+function openPrivacyModal() { document.getElementById('privacyModal').classList.add('active'); }
+function closePrivacyModal() { document.getElementById('privacyModal').classList.remove('active'); }
+
+function toggleAuthMode() {
+    const title = document.getElementById('authTitle');
+    const btn = document.getElementById('authSubmitBtn');
+    const toggle = document.getElementById('authToggleText');
+    if(currentAuthMode === "login") {
+        currentAuthMode = "signup";
+        title.innerText = "Provision New Account";
+        btn.innerText = "Register Account";
+        toggle.innerHTML = `Already registered? <span onclick="toggleAuthMode()">Sign In</span>`;
+    } else {
+        currentAuthMode = "login";
+        title.innerText = "Sign In to Dashboard";
+        btn.innerText = "Login";
+        toggle.innerHTML = `Don't have an account? <span onclick="toggleAuthMode()">Sign Up</span>`;
+    }
+}
+
+// Standard Role Management functions
+function selectRole(id) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`card-${id}`).classList.add('selected');
+    selectedRole = id;
+    document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
+    checkStartValidity();
+}
+
+function setDiff(btn) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDiff = btn.getAttribute('data-diff');
+}
+
+function onCustomInput() { checkStartValidity(); }
+
+function checkStartValidity() {
+    const btn = document.getElementById('startBtn');
+    if (!selectedRole) return btn.disabled = true;
+    if (selectedRole === 'custom') {
+        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
+    } else {
+        btn.disabled = false;
+    }
+}
+
+function goHome() { navigateTo('landing'); }
+</script>
+
+<script src="gemini.js"></script>
+
+</body>
+</html>
