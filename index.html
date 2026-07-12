@@ -1,511 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InterviewCoach.ai — Premium Enterprise AI Simulation Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-/* ─── SYSTEM ANCHORS & VARIABLE DESIGN TOKENS ───────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --ink:       #06080F;
-  --ink2:      #0B0F19;
-  --ink3:      #121826;
-  --ink4:      #1A2235;
-  --glass:     rgba(6, 8, 15, 0.75);
-  --glass-bdr: rgba(255, 255, 255, 0.08);
-  --line:      rgba(255, 255, 255, 0.06);
-  --line2:     rgba(255, 255, 255, 0.12);
-  --blue:      #3B82F6;
-  --blue-lt:   #60A5FA;
-  --blue-bg:   rgba(59, 130, 246, 0.12);
-  --blue-bdr:  rgba(59, 130, 246, 0.3);
-  --green:     #10B981;
-  --green-bg:  rgba(16, 185, 129, 0.12);
-  --amber:     #F59E0B;
-  --amber-bg:  rgba(245, 158, 11, 0.12);
-  --red:       #EF4444;
-  --red-bg:    rgba(239, 68, 68, 0.12);
-  --purple:    #8B5CF6;
-  --purple-bg: rgba(139, 92, 246, 0.12);
-  --t1:        #F9FAFB;
-  --t2:        #9CA3AF;
-  --t3:        #6B7280;
-  --radius:    12px;
-  --radius-lg: 20px;
-  --mono:      'JetBrains Mono', monospace;
-  --sans:      'Plus Jakarta Sans', sans-serif;
-  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+<script>
+const ROLES = [
+  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
+  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
+  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
+  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
+  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
+  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
+  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
+  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
+];
+
+const QB = {
+  swe: [
+    { q:'Tell me about yourself and your programming background.', cat:'Introduction', diff:'beginner' },
+    { q:'What programming languages are you most comfortable with and why?', cat:'Technical', diff:'beginner' },
+    { q:'Can you explain the difference between an array and a linked list?', cat:'Technical', diff:'beginner' },
+    { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
+    { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
+    { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
+    { q:'What is the difference between frontend and backend development?', cat:'Technical', diff:'beginner' },
+    { q:'Tell me about a time you had to learn a new technology quickly. How did you handle it?', cat:'Behavioral', diff:'beginner' },
+    { q:'How do you ensure your code is readable by others?', cat:'Communication', diff:'beginner' },
+    { q:'What do you do when you\'re stuck on a problem for more than an hour?', cat:'Problem Solving', diff:'beginner' },
+    { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
+    { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
+    { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
+    { q:'Describe a time a bug you introduced caused a significant problem. How did you resolve it?', cat:'Behavioral', diff:'intermediate' },
+    { q:'How do you approach code reviews — both when reviewing others\' code and receiving feedback?', cat:'Communication', diff:'intermediate' },
+    { q:'Explain the concept of time complexity. Give an example where choosing the wrong algorithm caused performance issues.', cat:'Technical', diff:'intermediate' },
+    { q:'Tell me about a time you disagreed with a technical decision on your team. What did you do?', cat:'Behavioral', diff:'intermediate' },
+    { q:'How do you balance writing tests versus shipping features quickly?', cat:'Problem Solving', diff:'intermediate' },
+    { q:'Describe a situation where you had to refactor a large piece of legacy code. What was your approach?', cat:'Situational', diff:'intermediate' },
+    { q:'How do you stay up to date with new technologies and best practices?', cat:'Communication', diff:'intermediate' },
+    { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
+  ]
+};
+
+// Application state and setup functions
+let selectedRole = '';
+let selectedDiff = 'beginner';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('rolesGrid');
+    ROLES.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'role-card';
+        div.id = `card-${r.id}`;
+        div.onclick = () => selectRole(r.id);
+        div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
+        grid.appendChild(div);
+    });
+});
+
+function selectRole(id) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`card-${id}`).classList.add('selected');
+    selectedRole = id;
+    document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
+    checkStartValidity();
 }
 
-body.light-theme {
-  --ink:       #F8FAFC;
-  --ink2:      #FFFFFF;
-  --ink3:      #F1F5F9;
-  --ink4:      #E2E8F0;
-  --glass:     rgba(248, 250, 252, 0.8);
-  --glass-bdr: rgba(15, 23, 42, 0.08);
-  --line:      rgba(15, 23, 42, 0.06);
-  --line2:     rgba(15, 23, 42, 0.12);
-  --t1:        #0F172A;
-  --t2:        #475569;
-  --t3:        #94A3B8;
+function setDiff(btn) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDiff = btn.getAttribute('data-diff');
 }
 
-body {
-  font-family: var(--sans);
-  background: var(--ink);
-  color: var(--t1);
-  font-size: 15px;
-  line-height: 1.6;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  transition: background 0.3s, color 0.3s;
-  overflow-x: hidden;
+function onCustomInput() { checkStartValidity(); }
+
+function checkStartValidity() {
+    const btn = document.getElementById('startBtn');
+    if (!selectedRole) return btn.disabled = true;
+    if (selectedRole === 'custom') {
+        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
+    } else {
+        btn.disabled = false;
+    }
 }
 
-/* ─── APP CORE PLATFORM SHELL COVERS ─────────────────────────────────────── */
-.screen { display: none; flex-direction: column; min-height: 100vh; padding-top: 85px; animation: slideFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
-.screen.active { display: flex; }
-
-/* ─── STICKY GLASSMORPHIC HEAD ARCHITECTURE ─────────────────────────────── */
-.navbar {
-  position: fixed; top: 0; left: 0; right: 0; height: 80px;
-  background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--glass-bdr);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 3rem; z-index: 100;
-  transition: var(--transition);
+function goHome() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('landing').classList.add('active');
 }
-.nav-brand { font-weight: 800; font-size: 20px; letter-spacing: -0.75px; color: var(--t1); display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.nav-brand span { background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.nav-links { display: flex; align-items: center; gap: 2.5rem; list-style: none; }
-.nav-links a { color: var(--t2); text-decoration: none; font-size: 14.5px; font-weight: 600; transition: var(--transition); cursor: pointer; position: relative; }
-.nav-links a:hover, .nav-links a.active { color: var(--blue-lt); }
-.nav-links a.active::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 2px; background: var(--blue); border-radius: 2px; }
-
-/* ─── BRAND LANDING COMPONENT WRAPPERS ──────────────────────────────────── */
-.hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10rem 2rem 6rem; position: relative; }
-.hero-title { font-size: clamp(42px, 8vw, 72px); font-weight: 800; letter-spacing: -2px; line-height: 1.05; max-width: 1000px; margin-bottom: 1.5rem; }
-.hero-title span { background: linear-gradient(135deg, #60A5FA, #C084FC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.logo-strip { display: flex; align-items: center; justify-content: center; gap: 3.5rem; margin-top: 5rem; flex-wrap: wrap; opacity: 0.6; }
-.logo-item { font-size: 16px; font-weight: 700; color: var(--t2); font-family: var(--mono); letter-spacing: -0.5px; }
-
-/* ─── SAAS APPLICATION DASHBOARD ARCHITECTURE GRID ──────────────────────── */
-.dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 40px; max-width: 1500px; margin: 0 auto; width: 100%; padding: 2.5rem; }
-.dash-sidebar { display: flex; flex-direction: column; gap: 10px; }
-.side-item { padding: 14px 18px; border-radius: var(--radius); color: var(--t2); font-weight: 600; font-size: 14.5px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 14px; border: 1px solid transparent; }
-.side-item:hover { background: var(--ink3); color: var(--t1); }
-.side-item.active { background: var(--ink3); color: var(--blue-lt); border-color: var(--glass-bdr); border-left: 4px solid var(--blue); }
-
-.dash-main-content { display: flex; flex-direction: column; gap: 32px; }
-.panel-view { display: none; flex-direction: column; gap: 32px; animation: slideFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.panel-view.active { display: flex; }
-
-/* ─── PREMIUM UI REUSABLE ATOMS ─────────────────────────────────────────── */
-.card-premium {
-  background: var(--ink2); border: 1px solid var(--glass-bdr); border-radius: var(--radius-lg);
-  padding: 2.5rem; box-shadow: 0 12px 40px rgba(0,0,0,0.25); position: relative; overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
-}
-.card-premium:hover { border-color: rgba(59, 130, 246, 0.2); }
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--blue), #1d4ed8); color: #fff; border: none; border-radius: var(--radius);
-  padding: 14px 28px; font-family: var(--sans); font-size: 14.5px; font-weight: 700;
-  cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
-}
-.btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.btn-ghost {
-  background: var(--ink3); border: 1px solid var(--line2); color: var(--t1);
-  border-radius: var(--radius); padding: 13px 26px; font-family: var(--sans);
-  font-size: 14.5px; font-weight: 600; cursor: pointer; transition: var(--transition);
-}
-.btn-ghost:hover { background: var(--ink4); border-color: var(--blue-bdr); }
-
-.metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
-.metric-tile { background: var(--ink2); border: 1px solid var(--glass-bdr); border-radius: var(--radius); padding: 1.75rem; display: flex; flex-direction: column; position: relative; }
-.metric-num { font-size: 36px; font-weight: 700; font-family: var(--mono); color: var(--t1); margin-top: 10px; letter-spacing: -1px; }
-
-/* ─── SUB METER INTEGRATIONS ────────────────────────────────────────────── */
-.sub-meter-card { background: var(--ink3); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--glass-bdr); }
-.sub-meter-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; font-weight: 600; color: var(--t2); }
-.sub-meter-bar-bg { height: 8px; background: var(--ink4); border-radius: 4px; overflow: hidden; }
-.sub-meter-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-
-.chip { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 14px; border-radius: 30px; }
-.chip-blue { background: var(--blue-bg); color: var(--blue-lt); border: 1px solid var(--blue-bdr); }
-.chip-purple { background: var(--purple-bg); color: #C084FC; border: 1px solid rgba(139, 92, 246, 0.3); }
-
-/* ─── REALTIME INTERACTION WAITING PIN COVERS ───────────────────────────── */
-.ai-spinner { width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--blue-lt); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes slideFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-/* ─── TOAST NOTIFICATION CONTAINER SYSTEM ────────────────────────────────── */
-.toast-container { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
-.toast { background: var(--ink2); border-left: 4px solid var(--blue); padding: 18px 24px; border-radius: var(--radius); min-width: 340px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); color: var(--t1); font-size: 14px; display: flex; align-items: center; justify-content: space-between; animation: toastIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid var(--glass-bdr); }
-@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-/* ─── SECURITY MODAL CONTAINER COVERS ────────────────────────────────────── */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 500; padding: 20px; }
-.modal-content { background: var(--ink2); border: 1px solid var(--glass-bdr); width: 100%; max-width: 480px; padding: 3rem; border-radius: var(--radius-lg); position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
-.modal-close { position: absolute; top: 24px; right: 24px; background: none; border: none; color: var(--t2); font-size: 18px; cursor: pointer; }
-</style>
-</head>
-<body>
-
-<div id="toastContainer" class="toast-container"></div>
-
-<nav class="navbar">
-  <div class="nav-brand" onclick="navigateTo('landing')">⚡ <span>InterviewCoach.ai</span></div>
-  <ul class="nav-links">
-    <li><a onclick="navigateTo('landing')" id="link-landing" class="active">Product</a></li>
-    <li><a onclick="navigateTo('dashboard')" id="link-dashboard">Workspace Dashboard</a></li>
-  </ul>
-  <div style="display: flex; align-items: center; gap: 16px;">
-    <button class="btn-ghost" style="padding: 8px 16px; font-size: 13px;" onclick="toggleSystemTheme()">🌗 Theme Toggle</button>
-    <button id="loginBtn" class="btn-primary" style="padding: 10px 20px; font-size: 13.5px;" onclick="openAuthModal()">Candidate Portal</button>
-  </div>
-</nav>
-
-<div id="landing" class="screen active">
-  <div class="hero">
-    <div class="chip chip-purple" style="margin-bottom: 2rem;">Next-Gen Engine v2.5 Deployed</div>
-    <h1 class="hero-title">Practice Technical Mock Rounds with <span>Context-Aware Generative AI</span></h1>
-    <p style="color: var(--t2); font-size: 18px; max-width: 700px; margin-bottom: 3.5rem;">An advanced, continuous evaluation playground for engineers, developers, and architects to diagnose alignment and resume ATS constraints in real-time.</p>
-    <div>
-      <button class="btn-primary" style="padding: 18px 40px; font-size: 16px;" onclick="navigateTo('dashboard')">Enter Candidate Workspace →</button>
-    </div>
-    <div class="logo-strip">
-      <div class="logo-item">// GOOGLE CORE</div>
-      <div class="logo-item">// AMAZON SCALE</div>
-      <div class="logo-item">// META SYSTEM</div>
-      <div class="logo-item">// OPENAI MATRIX</div>
-    </div>
-  </div>
-</div>
-
-<div id="dashboard" class="screen">
-  <div class="dashboard-grid">
-    
-    <aside class="dash-sidebar">
-      <div class="side-item active" id="tab-overview" onclick="switchDashboardPanel('overview')">📊 Simulation Workspace</div>
-      <div class="side-item" id="tab-resume" onclick="switchDashboardPanel('resume')">📁 ATS Vector Registry</div>
-      <div class="side-item" id="tab-coach" onclick="switchDashboardPanel('coach')">🧠 Career Director Dialogue</div>
-      <div class="side-item" id="tab-challenges" onclick="switchDashboardPanel('challenges')">🎯 Edge Case Matrices</div>
-      <div class="side-item" id="tab-history" onclick="switchDashboardPanel('history')">📜 Historical Session Vault</div>
-    </aside>
-
-    <main class="dash-main-content">
-      
-      <section id="panel-overview" class="panel-view active">
-        <div class="metrics-row">
-          <div class="metric-tile">
-            <span style="font-size: 12px; color: var(--t2); font-weight: 700; letter-spacing: 0.5px;">EVALUATIONS COMPLETED</span>
-            <div class="metric-num" id="statCompleted">0</div>
-          </div>
-          <div class="metric-tile">
-            <span style="font-size: 12px; color: var(--t2); font-weight: 700; letter-spacing: 0.5px;">ACCUMULATED RATING MEAN</span>
-            <div class="metric-num" id="statAvg">0.0</div>
-          </div>
-          <div class="metric-tile">
-            <span style="font-size: 12px; color: var(--t2); font-weight: 700; letter-spacing: 0.5px;">PERSISTENT DAY STREAK</span>
-            <div class="metric-num" id="userStreakVal">1 Day</div>
-          </div>
-          <div class="metric-tile">
-            <span style="font-size: 12px; color: var(--t2); font-weight: 700; letter-spacing: 0.5px;">EXPERIENCE TELEMETRY METRIC</span>
-            <div class="metric-num" id="userExperiencePoints">150 XP</div>
-          </div>
-        </div>
-
-        <div class="card-premium" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent); display: flex; align-items: center; gap: 20px; border-color: rgba(139, 92, 246, 0.15);">
-          <span style="font-size: 32px;">🏆</span>
-          <div>
-            <div style="font-weight: 700; font-size: 16px; margin-bottom: 2px;" id="badgeLevelTitle">Rank Profile: Enterprise Architect (Level 1)</div>
-            <div style="font-size: 13.5px; color: var(--t2);">Your pipeline yields consistent high-performance marks. Complete Daily Edge Matrices to boost score densities.</div>
-          </div>
-        </div>
-
-        <div class="card-premium">
-          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 2rem;">Initialize Target Assessment Matrix Parameters</h3>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 1.75rem;">
-            <div>
-              <label style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--t3); display: block; margin-bottom: 8px;">Target Functional Alignment</label>
-              <select id="saasRoleSelector" style="background: var(--ink3); border: 1px solid var(--line2); padding: 14px; border-radius: var(--radius); width: 100%; color: var(--t1); font-family: var(--sans); outline: none;" onchange="handleRoleDropdownChange()">
-                <option value="swe">Core Engineering & Distributed Systems</option>
-                <option value="system_design">Infrastructure Strategy & System Architecture</option>
-                <option value="behavioral">HR Leadership Strategy & STAR Metrics</option>
-                <option value="uiux">Product Interface Mechanics & UI/UX Development</option>
-                <option value="custom">Custom Specified Domain Shell Boundary</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--t3); display: block; margin-bottom: 8px;">Target Corporate Blueprint Model</label>
-              <select id="saasCompanySelector" style="background: var(--ink3); border: 1px solid var(--line2); padding: 14px; border-radius: var(--radius); width: 100%; color: var(--t1); font-family: var(--sans); outline: none;">
-                <option value="Google">Google (Advanced Algorithmic Performance Optimization)</option>
-                <option value="Amazon">Amazon (Customer Obsession Scale Loops)</option>
-                <option value="Meta">Meta (High Velocity Deployment Topologies)</option>
-                <option value="OpenAI">OpenAI (Frontier System Generative Bounds)</option>
-                <option value="Startup">Early Stage Rapid Prototyping Systems</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 1.75rem;">
-            <div>
-              <label style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--t3); display: block; margin-bottom: 8px;">Evaluation Severity Matrix</label>
-              <div style="display: flex; gap: 10px;" id="diffButtonGroupContainer">
-                <button class="btn-ghost active" onclick="setSaaSDiff(this, 'beginner')" style="padding: 10px 20px; font-size: 13px; border-radius: 30px;">Beginner</button>
-                <button class="btn-ghost" onclick="setSaaSDiff(this, 'intermediate')" style="padding: 10px 20px; font-size: 13px; border-radius: 30px;">Intermediate</button>
-                <button class="btn-ghost" onclick="setSaaSDiff(this, 'advanced')" style="padding: 10px 20px; font-size: 13px; border-radius: 30px;">Advanced</button>
-              </div>
-            </div>
-            <div id="saasCustomRoleWrapper" style="display: none;">
-              <label style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--t3); display: block; margin-bottom: 8px;">Specify Arbitrary Domain Namespace</label>
-              <input type="text" id="customRoleInput" style="background: var(--ink3); border: 1px solid var(--line2); padding: 14px; border-radius: var(--radius); width: 100%; color: var(--t1); font-family: var(--sans); outline: none;" placeholder="e.g. Real-Time Telemetry Engineer" />
-            </div>
-          </div>
-
-          <div style="margin-bottom: 2rem;">
-            <label style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--t3); display: block; margin-bottom: 8px;">Paste External Target Job Specifications Container (Optional Profile Tuning)</label>
-            <textarea id="saasJobDescriptionInput" style="width: 100%; background: var(--ink3); border: 1px solid var(--line2); border-radius: var(--radius); padding: 14px; color: var(--t1); font-family: var(--sans); font-size: 14px; resize: vertical; min-height: 100px; outline: none;" placeholder="Supply targeted corporate functional constraints parameters context maps here to align verification matrix evaluation trees directly..."></textarea>
-          </div>
-
-          <button class="btn-primary" style="width: 100%; justify-content: center; padding: 16px;" onclick="triggerSaaSInterviewInit()">Deploy Active Real-Time Assessment Loop Track →</button>
-        </div>
-      </section>
-
-      <section id="panel-resume" class="panel-view">
-        <div class="card-premium">
-          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 0.5rem;">ATS Profile Verification Vector Mapping</h3>
-          <p style="color: var(--t2); font-size: 14px; margin-bottom: 1.75rem;">Supply curriculum vitae configurations text content patterns downstream to extract validation metric profiles.</p>
-          <textarea id="resumeRawTextInput" style="width: 100%; background: var(--ink3); border: 1px solid var(--line2); border-radius: var(--radius); padding: 18px; color: var(--t1); font-family: var(--mono); font-size: 13.5px; min-height: 220px; margin-bottom: 1.5rem; line-height: 1.6; outline: none;" placeholder="Paste raw profile string tokens from document files directly inside this diagnostic block frame bounds..."></textarea>
-          <button class="btn-primary" id="btnProcessResume" onclick="executeSaaSResumeAnalysis()">Initialize High-Velocity Parsing Routine</button>
-        </div>
-
-        <div id="resumeAnalysisReportContainer" class="card-premium" style="display: none; flex-direction: column; gap: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 16px;">
-            <h4 style="font-size: 16px; font-weight: 700; color: var(--blue-lt);">ATS Matrix Analytics Diagnostics Payload</h4>
-            <div class="chip chip-purple" id="atsScoreMetricBadge" style="font-size: 12px; padding: 6px 16px;">ATS Index Score: —</div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <div>
-              <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--green); margin-bottom: 6px;">Identified Strengths</div>
-              <div id="resumeReportStrengths" style="font-size: 14px; color: var(--t2); line-height: 1.6;">—</div>
-            </div>
-            <div>
-              <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--red); margin-bottom: 6px;">Anomalies & Gaps Located</div>
-              <div id="resumeReportWeaknesses" style="font-size: 14px; color: var(--t2); line-height: 1.6;">—</div>
-            </div>
-          </div>
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--amber); margin-bottom: 6px;">Structural Remapping Guidance Strategy</div>
-            <div id="resumeReportSuggestions" style="font-size: 14px; color: var(--t2); line-height: 1.6;">—</div>
-          </div>
-        </div>
-      </section>
-
-      <section id="panel-coach" class="panel-view">
-        <div class="card-premium" style="display: flex; flex-direction: column; gap: 20px;">
-          <div>
-            <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Continuous Strategy Consultation Interface</h3>
-            <p style="color: var(--t2); font-size: 14px;">Inquire regarding target base compensation bands, profile architectural alignment, or leadership loop paths.</p>
-          </div>
-          <div id="coachChatViewport" style="background: var(--ink3); border: 1px solid var(--line2); border-radius: var(--radius); padding: 20px; min-height: 260px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; font-size: 14px; border: 1px solid var(--glass-bdr);">
-            <div style="color: var(--purple); line-height: 1.6;"><strong>System Director Advisor:</strong> Active connection logs stable. Submit target compensation queries or organizational topology vectors to formulate strategies.</div>
-          </div>
-          <div style="display: flex; gap: 12px;">
-            <input type="text" id="coachQueryInput" style="flex: 1; background: var(--ink3); border: 1px solid var(--line2); border-radius: var(--radius); padding: 14px; color: var(--t1); font-family: var(--sans); font-size: 14.5px; outline: none;" placeholder="Request profile adjustments or counter-offer framing tactics..." onkeydown="if(event.key==='Enter') executeSaaSSteeringConsultation()"/>
-            <button class="btn-primary" onclick="executeSaaSSteeringConsultation()">Query Platform Strategy</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="panel-challenges" class="panel-view">
-        <div class="card-premium">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 20px; font-weight: 700;">Daily System Calibration Matrix</h3>
-            <span id="challengeTrackingDateStamp" style="font-family: var(--mono); font-size: 12px; color: var(--t3);">—</span>
-          </div>
-          <div style="background: var(--blue-bg); border: 1px solid var(--blue-bdr); border-radius: var(--radius); padding: 20px; margin-bottom: 2rem;">
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--blue-lt); margin-bottom: 6px;">Active Tracking Isolation Target</div>
-            <div id="dailyChallengeTargetTypography" style="font-family: var(--mono); font-size: 14.5px; line-height: 1.6; color: var(--t1);">Deploy target criteria parser downstream to assign today's tracking verification nodes vector fields.</div>
-          </div>
-          <textarea id="dailyChallengeResponseInput" style="width: 100%; background: var(--ink3); border: 1px solid var(--line2); border-radius: var(--radius); padding: 14px; color: var(--t1); font-family: var(--sans); font-size: 14.5px; min-height: 120px; margin-bottom: 1.5rem; outline: none;" placeholder="Type target solution mapping architecture parameters natively inside this framework scope wrapper..."></textarea>
-          <div style="display: flex; gap: 12px;">
-            <button class="btn-ghost" onclick="generateDailyChallengeSession()">Isolate Question Matrix</button>
-            <button class="btn-primary" id="btnSubmitDailyChallenge" disabled onclick="submitDailyChallengeResolution()">Commit Evaluation Matrix Payload</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="history-panel-view" class="panel-view">
-        <div class="card-premium">
-          <h3 style="font-size: 20px; margin-bottom: 1.5rem; font-weight: 700;">Completed Session Log Tracking Vault</h3>
-          <div id="historyLogContainer" style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="font-size: 14px; color: var(--t2);">Establishing target synchronization logs models trackers data structures...</div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-</div>
-
-<div id="interview" class="screen">
-  <div style="display: flex; align-items: center; padding: 1.25rem 3rem; background: var(--ink2); border-bottom: 1px solid var(--line); position: sticky; top: 80px; z-index: 50; gap: 20px;">
-    <div id="headerRole" style="font-size: 12px; font-weight: 800; font-family: var(--mono); text-transform: uppercase; background: var(--purple-bg); color: #C084FC; padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(139, 92, 246, 0.25);">CORE SYSTEMS ROUTINE INITIALIZING</div>
-    <div id="headerDiff" style="font-size: 12px; font-weight: 800; font-family: var(--mono); background: var(--blue-bg); color: var(--blue-lt); padding: 4px 12px; border-radius: 4px; border: 1px solid var(--blue-bdr);">ADVANCED</div>
-    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-      <div style="height: 6px; background: var(--ink4); border-radius: 4px; overflow: hidden;">
-        <div id="progressFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width 0.4s ease;"></div>
-      </div>
-      <div id="progressText" style="font-family: var(--mono); font-size: 11px; color: var(--t2);">Assessment Frame — Loading Track</div>
-    </div>
-    <button onclick="abortSimulationStatePipeline()" style="background: none; border: none; color: var(--red); font-size: 13.5px; font-weight: 700; cursor: pointer;">✕ Terminate Track</button>
-  </div>
-
-  <div style="max-width: 900px; margin: 0 auto; width: 100%; padding: 4rem 2rem; display: flex; flex-direction: column; gap: 32px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span class="chip chip-blue" id="qCategory">EVALUATION CONTEXT MATRIX</span>
-    </div>
-
-    <div class="card-premium" style="border-left: 4px solid var(--blue); background: var(--ink2);"><div id="qText" style="font-family: var(--mono); font-size: 17px; line-height: 1.75; color: var(--t1);">Formatting validation arrays boundaries parameters hooks...</div></div>
-
-    <div class="ai-loader-overlay" id="aiThinkingLoader" style="display: none; align-items: center; gap: 16px; background: var(--blue-bg); border: 1px solid var(--blue-bdr); padding: 20px; border-radius: var(--radius);">
-      <div class="ai-spinner"></div>
-      <span style="font-size: 13.5px; font-family: var(--mono); color: var(--blue-lt);">AI Recruiter computing contextual trace routes parameters logs bounds...</span>
-    </div>
-
-    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--ink2); padding: 20px; border-radius: var(--radius); border: 1px solid var(--glass-bdr);">
-      <button class="btn-ghost" id="micToggleBtn" onclick="toggleVoiceRecording()" style="border-color: var(--blue-bdr); font-weight: 700; color: var(--blue-lt);">🎙️ Deploy Real-Time Voice Capture Node</button>
-      <div class="voice-wave" id="micWaveAnimation" style="display: none; align-items: center; gap: 6px; height: 30px;">
-        <div style="width: 4px; height: 16px; background: var(--blue-lt); border-radius: 4px; animation: pulseWave 0.6s infinite alternate;"></div>
-        <div style="width: 4px; height: 26px; background: var(--blue-lt); border-radius: 4px; animation: pulseWave 0.6s infinite alternate 0.15s;"></div>
-        <div style="width: 4px; height: 20px; background: var(--blue-lt); border-radius: 4px; animation: pulseWave 0.6s infinite alternate 0.3s;"></div>
-      </div>
-    </div>
-
-    <div>
-      <label style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--t3); display: block; margin-bottom: 8px;">Response Workspace Arena Input</label>
-      <textarea class="answer-box" id="answerBox" style="width: 100%; background: var(--ink2); border: 1px solid var(--line2); border-radius: var(--radius); padding: 20px; color: var(--t1); font-family: var(--sans); font-size: 15.5px; line-height: 1.75; min-height: 180px; outline: none; resize: vertical;" placeholder="Formulate response text frames or stream inputs cleanly via the active capture voice controller nodes mapped above..." oninput="onAnswerType()"></textarea>
-      <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--t3); font-family: var(--mono); margin-top: 8px;">
-        <span>Quantized Metrics Tracker Length: <span id="wordCount">0</span> Words</span>
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 16px;">
-      <button class="btn-primary" id="submitBtn" style="flex: 1; justify-content: center; padding: 16px;" disabled onclick="submitAnswer()">Commit Response Matrix Payload</button>
-      <button class="btn-ghost" onclick="skipQuestion()">Bypass Frame Node</button>
-    </div>
-
-    <div class="feedback-panel card-premium" id="feedbackPanel" style="display: none; padding: 0; overflow: hidden; border-color: var(--line2);">
-      <div style="background: var(--ink3); padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 13px; font-weight: 800; text-transform: uppercase; font-family: var(--mono); color: var(--t2);">Real-Time Performance Mapping Diagnostic</span>
-        <div id="fbScore" style="font-family: var(--mono); font-weight: 700; font-size: 22px; color: var(--green);">0/10</div>
-      </div>
-      <div style="padding: 24px; display: flex; flex-direction: column; gap: 20px; font-size: 14.5px;">
-        <div><strong style="color: var(--green); display: block; margin-bottom: 4px;">✓ Verified Competency Structural Targets</strong><div id="fbStrengths" style="color: var(--t2); line-height: 1.6;">—</div></div>
-        <div><strong style="color: var(--amber); display: block; margin-bottom: 4px;">⚠ Located Optimization Deviations</strong><div id="fbWeaknesses" style="color: var(--t2); line-height: 1.6;">—</div></div>
-        <div><strong style="color: var(--blue-lt); display: block; margin-bottom: 4px;">💡 Actionable Correction Mechanics Mapping</strong><div id="fbSuggestion" style="color: var(--t2); line-height: 1.6;">—</div></div>
-        <div><strong style="color: var(--purple); display: block; margin-bottom: 4px;">★ Baseline Benchmark Model Integration</strong><div id="fbExample" style="font-family: var(--mono); background: var(--ink4); padding: 16px; border-radius: var(--radius); margin-top: 6px; color: var(--t2); line-height: 1.6; font-size: 13.5px; overflow-x: auto;">—</div></div>
-      </div>
-      <button class="btn-primary" id="nextQBtn" style="width: calc(100% - 48px); margin: 0 24px 24px; justify-content: center; padding: 14px;" onclick="nextQuestion()">Acknowledge Metrics & Move Forward →</button>
-    </div>
-
-  </div>
-</div>
-
-<div id="results" class="screen" style="padding: 6rem 2rem; align-items: center;">
-  <div style="max-width: 850px; width: 100%; display: flex; flex-direction: column; gap: 32px;">
-    
-    <div class="card-premium" style="text-align: center; padding: 4rem 2.5rem;">
-      <div id="resultsRole" style="font-family: var(--mono); font-size: 12px; color: var(--t3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">COMPILATION RESULTS TERMINATION PIPELINE</div>
-      <div id="resultsGrade" style="font-size: 80px; font-weight: 800; color: var(--blue-lt); font-family: var(--mono); line-height: 1; margin-bottom: 1rem; letter-spacing: -2px;">PASS</div>
-      <div id="resultsVerdict" style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Operational Verification Complete</div>
-      <p style="color: var(--t2); font-size: 15px;" id="resultsSubtitle">Metrics mapped across multi-dimensional polar coordinate grids below successfully.</p>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px;">
-      
-      <div class="card-premium" style="display: flex; flex-direction: column; gap: 18px;">
-        <h4 style="font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 10px;">Sub-Dimensional Density Distributions</h4>
-        
-        <div class="sub-meter-card">
-          <div class="sub-meter-header"><span>STAR Framework Structuring</span><span id="scoreValSTAR">85%</span></div>
-          <div class="sub-meter-bar-bg"><div class="sub-meter-bar-fill" id="barFillSTAR"></div></div>
-        </div>
-        <div class="sub-meter-card">
-          <div class="sub-meter-header"><span>Communication Lexical Flow</span><span id="scoreValComm">78%</span></div>
-          <div class="sub-meter-bar-bg"><div class="sub-meter-bar-fill" id="barFillComm"></div></div>
-        </div>
-        <div class="sub-meter-card">
-          <div class="sub-meter-header"><span>Technical Precision Index</span><span id="scoreValTech">92%</span></div>
-          <div class="sub-meter-bar-bg"><div class="sub-meter-bar-fill" id="barFillTech"></div></div>
-        </div>
-        <div class="sub-meter-card">
-          <div class="sub-meter-header"><span>Grammar Variance Metrics</span><span id="scoreValGrammar">88%</span></div>
-          <div class="sub-meter-bar-bg"><div class="sub-meter-bar-fill" id="barFillGrammar"></div></div>
-        </div>
-      </div>
-
-      <div class="card-premium" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
-        <h4 style="font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 10px;">Polar Performance Heatmap Canvas Map</h4>
-        <div style="width: 100%; height: 280px; background: var(--ink3); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; border: 1px solid var(--glass-bdr);">
-          <canvas id="saasRadarChartCanvas" width="320" height="260" style="max-width: 100%; max-height: 100%;"></canvas>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="card-premium">
-      <h4 style="font-size: 17px; font-weight: 700; color: var(--blue-lt); margin-bottom: 1.5rem;">Adaptive 4-Week Strategic Skill Mitigation Timeline</h4>
-      <div style="display: flex; flex-direction: column; gap: 16px; position: relative; padding-left: 24px; border-left: 2px solid var(--line2);" id="adaptiveRoadmapTimelineDOMNode">
-        </div>
-    </div>
-
-    <div class="card-premium" style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, var(--ink3), var(--ink2));">
-      <div>
-        <div style="font-weight: 700; font-size: 16px;">Export Validated Verification Credentials</div>
-        <p style="color: var(--t2); font-size: 13px;">Generate independent cryptographic authentication score cards mapping parameters out into storage arrays maps.</p>
-      </div>
-      <button class="btn-ghost" style="color: #C084FC; border-color: rgba(139, 92, 246, 0.3);" onclick="generatePNGAttestationCard()">Download Professional Validation Metrics PNG</button>
-    </div>
-
-    <button class="btn-primary" style="justify-content: center; padding: 16px;" onclick="goHome()">Terminate Verification Assessment Loop</button>
-  </div>
-</div>
-
-<div class="modal" id="authModal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeAuthModal()">✕</button>
-    <div style="font-size: 20px; font-weight: 700; margin-bottom: 1.5rem;" id="authTitle">Secure Core Gateway Authentication</div>
-    <form id="authForm" onsubmit="handleAuthSubmit(event)" style="display: flex; flex-direction: column; gap: 1.25rem;">
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <label style="font-size: 11px; text-transform: uppercase; color: var(--t3); font-weight: 800;">Identity Access Token Email</label>
-        <input type="email" id="authEmail" style="background: var(--ink); border: 1px solid var(--line2); padding: 14px; border-radius: var(--radius); color: var(--t1); font-family: var(--sans); outline: none;" required />
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <label style="font-size: 11px; text-transform: uppercase; color: var(--t3); font-weight: 800;">Security Clearance Key</label>
-        <input type="password" id="authPassword" style="background: var(--ink); border: 1px solid var(--line2); padding: 14px; border-radius: var(--radius); color: var(--t1); font-family: var(--sans); outline: none;" required />
-      </div>
-      <button type="submit" class="btn-primary" style="justify-content: center; margin-top: 10px;">Authorize Identity Session</button>
-    </form>
-  </div>
-</div>
-
-<footer style="background: var(--ink2); border-top: 1px solid var(--line); padding: 2.5rem; text-align: center; font-size: 13px; color: var(--t3); margin-top: auto;">
-  <div>Platform Simulation Engine Engine Suite • Architectural Framework Matrix Validation Pipeline</div>
-  <div style="margin-top: 6px;">&copy; <span id="currentYear">2026</span> InterviewCoach.ai. All data paths secure.</div>
-</footer>
-
-<script src="gemini.js"></script>
-</body>
-</html>
+</script>
