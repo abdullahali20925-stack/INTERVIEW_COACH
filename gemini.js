@@ -1,6 +1,6 @@
 
 // 1. Put your API key inside the quotation marks below:
-const GEMINI_API_KEY = "AQ.Ab8RN6LS8nTSJLHqSWCITBD05FKvQq8cIdeTYR19kjrfqw891A"; 
+const GEMINI_API_KEY = "AQ.Ab8RN6Ll04W4LprJy3ur_nFbOlzUVIbUzJlnIfHYmAzzkoTTYg"; 
 
 // Global state tracking interview questions and user scores
 let currentInterviewQuestions = [];
