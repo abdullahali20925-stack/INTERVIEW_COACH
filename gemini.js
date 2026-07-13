@@ -1,4 +1,3 @@
-
 // 1. Put your API key inside the quotation marks below:
 const GEMINI_API_KEY = "AQ.Ab8RN6LS8nTSJLHqSWCITBD05FKvQq8cIdeTYR19kjrfqw891A"; 
 
@@ -21,38 +20,52 @@ function cleanJsonString(str) {
     return clean.trim();
 }
 
+// Helper to compile metadata context for prompt engineering
+function getExtraContext() {
+    const company = document.getElementById('companyInput')?.value.trim() || "Unspecified Target Company";
+    const industry = document.getElementById('industryInput')?.value.trim() || "General Industry Sector";
+    const description = document.getElementById('jobDescInput')?.value.trim() || "Standard operational responsibilities";
+    return { company, industry, description };
+}
+
 // Generates 35-40 custom questions tailored deeply by profession and baseline difficulty
 async function generateInterviewQuestions(jobTitle, experienceLevel) {
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    const context = getExtraContext();
 
-    const systemPrompt = `You are an elite, highly professional Senior HR Manager, Industry Expert, and Technical Recruiter.
-Your objective is to design a realistic, fully customized, high-fidelity interview plan tailored exactly to the provided job title and initial standard expectation level.
+    const systemPrompt = `You are an elite, highly professional Senior HR Recruiter, Hiring Manager, Technical Interviewer, and Industry Expert combined.
+Your objective is to design a realistic, fully customized, high-fidelity interview plan tailored exactly to the provided job title, experience level, and additional parameters.
 
-First, mentally analyze the target profession across:
-- Core operational responsibilities & daily workflows.
-- Technical tools, frameworks, hardware, or software unique to this industry.
-- Necessary metrics, regulations, paradigms, methodologies, and certifications.
-- Distinct variations expected between a entry/junior candidate vs an elite veteran.
+CRITICAL STEP-BY-STEP INTERNAL ANALYSIS PATHWAY:
+Before formulating any single question, you must thoroughly evaluate and infer the following attributes related to the profession:
+1. Core daily operational workflows and unique metrics for performance success.
+2. Hard skills, specialized domain tooling, specialized frameworks, hardware, or stack choices.
+3. Universal industry regulations, corporate guidelines, certification rules, and methodologies.
+4. Essential soft skills, collaborative pathways, conflict points, and communication demands.
+5. Common interview themes, industry shifts, and typical filters used by real field experts.
+6. Nuanced expectations between professional levels: Beginner/Junior vs Intermediate vs Advanced/Leadership.
 
-Generate between 35 and 40 unique, realistic interview questions.
-Rules for Generation:
-- Never use repetitive phrasing or boilerplate questions.
-- Prioritize high-context, profession-specific situational scenarios, functional concepts, and authentic engineering/design/operational dilemmas over generic templates.
-- Ensure questions scale up organically in overall difficulty (Easy -> Medium -> Hard) as the sequence proceeds.
-- Structure the complete pool using approximately these volume buckets:
-  * 5 HR / Behavioral Questions
-  * 5 Experience & Background Questions
-  * 5 Technical/Domain Fundamentals Questions
-  * 5 Practical Skills / Application Questions
-  * 5 Scenario-Based / Critical Incident Questions
-  * 5 Complex Problem Solving Questions
-  * 3 Company Cultural Fit Questions
-  * 3 Leadership & Mentorship Questions (where applicable for the job, otherwise deep collaborative technical items)
-  * 4 Advanced Analytical/Strategic Questions
+GENERATION BLUEPRINT & FLOW RULES:
+- Generate between 35 and 40 unique, realistic, highly specialized interview questions.
+- Never repeat phrasing or baseline formats. Every profession must yield a radically different line of questioning.
+- Avoid generic interview templates (e.g., do not ask generic things like "Tell me about a time you failed" unless heavily adapted to specific high-stakes profession metrics).
+- Structure the pool dynamically into a continuous sequence that simulates an organic interview flow, transitioning naturally where later categories build upon operational concepts of earlier questions.
+- Scale difficulty dynamically as the list index grows (Easy -> Medium -> Hard -> Expert).
+- Approximate allocation bucket targets:
+  * 5 HR / Alignment Questions
+  * 5 Behavioral Questions
+  * 5 Experience & Background Dynamics
+  * 5 Technical Fundamentals / Basic Domain Systems
+  * 5 Practical Skills / Live Operational Application Tasks
+  * 5 Scenario-Based / Critical Incidents
+  * 5 Complex Problem Solving Dilemmas
+  * 3 Target Company / Cultural Values Fit Questions
+  * 3 Leadership & Mentorship Operations (or cross-team design architectures if leadership is less relevant to target profile)
+  * 4 Advanced Analytical or Strategic Progression Questions
 
-You must output ONLY a valid JSON string. Do not wrap it in markdown block fences, do not write explanations, and do not append additional trailing texts.
+You must output ONLY a valid JSON string. Do not wrap it in markdown block fences, do not write code comments, do not include extra introduction text, and do not append additional trailing text.
 
-The JSON response format must strictly look like this:
+The JSON response format must strictly match this structure:
 {
   "job": "Clean Job Title String",
   "questions": [
@@ -65,7 +78,13 @@ The JSON response format must strictly look like this:
   ]
 }`;
 
-    const userPrompt = `Generate a master interview question set of 35-40 questions for the profession: "${jobTitle}" with a baseline level of "${experienceLevel}". Ensure deep role-specific adaptation. Avoid duplicates.`;
+    const userPrompt = `Generate a master customized interview set of 35-40 sequential questions for the profession: "${jobTitle}".
+Baseline Experience Tier Target: "${experienceLevel}".
+Target Company: "${context.company}"
+Industry Context: "${context.industry}"
+Job Description context elements: "${context.description}"
+
+Ensure distinct adaptation. Avoid duplicates. Later questions should build on earlier concepts to preserve contextual flow. Return valid JSON only.`;
 
     let attempt = 0;
     while (attempt < 2) {
@@ -79,12 +98,15 @@ The JSON response format must strictly look like this:
                 })
             });
 
+            if (!response.ok) throw new Error(`Network status error: ${response.status}`);
+            
             const data = await response.json();
+            if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error("Empty text token stream received from API.");
+            
             const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
             const parsed = JSON.parse(rawText);
 
             if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 35) {
-                // Ensure every question has required validation elements and no duplicate texts
                 const validQuestions = [];
                 const seenTexts = new Set();
 
@@ -93,7 +115,7 @@ The JSON response format must strictly look like this:
                         seenTexts.add(q.question.toLowerCase());
                         validQuestions.push({
                             id: index + 1,
-                            category: q.category || "Domain Concept",
+                            category: q.category || "Domain Practice",
                             difficulty: q.difficulty || "Standard",
                             question: q.question
                         });
@@ -105,7 +127,7 @@ The JSON response format must strictly look like this:
                 }
             }
         } catch (e) {
-            console.warn("Attempt failed to construct valid interview payload. Retrying...", e);
+            console.warn(`Attempt ${attempt + 1} failed to construct valid interview payload. Retrying...`, e);
         }
         attempt++;
     }
@@ -115,40 +137,59 @@ The JSON response format must strictly look like this:
 // Core function to call the Google Gemini API safely for real-time response evaluations
 async function askGemini(question, userAnswer) {
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    const context = getExtraContext();
 
-    const systemPrompt = `
-    You are an expert Interview Coach. Analyze the user's answer to the interview question provided.
-    You MUST respond ONLY with a clean JSON object. Do not include any markdown formatting, backticks, or text outside the JSON block.
-    
-    The JSON structure must match this EXACTLY:
-    {
-        "score": 8,
-        "strengths": "Provide 1-2 detailed bullet points highlighting what they did well.",
-        "improvements": "Provide 1-2 details on what key information or structure was missing.",
-        "suggested": "Give a quick, actionable tip on how to restructure or improve this specific answer.",
-        "example": "Write a strong, professional example answer based on the user's situation."
+    const systemPrompt = `You are an expert AI Interview Evaluation Coach. Analyze the user's answer to the interview question provided.
+You must critique the response comprehensively across these distinct performance matrices:
+- Technical Accuracy (Domain correctness)
+- Communication (Clarity and structural expression)
+- Confidence (Decisiveness and narrative authority)
+- Completeness (Answering all facets of the prompt promptly)
+- Problem Solving (Analytical logic and pathing)
+- Industry Knowledge (Application of professional metrics and terminology)
+- Professionalism (Business alignment and delivery poise)
+
+You MUST respond ONLY with a clean JSON object. Do not include markdown formatting, backticks, or trailing prose blocks outside the valid JSON.
+
+The JSON structure must match this EXACTLY:
+{
+    "score": 8,
+    "strengths": "Provide a thorough bulleted list or narrative of technical and communication items performed well.",
+    "improvements": "Identify specific gaps where data, technical nuances, or framework steps were missing.",
+    "suggested": "Give an actionable step-by-step strategy to restructure or optimize this specific answer.",
+    "example": "Write a strong, professional example model answer customized to the targeted profession and company scenario.",
+    "careerAdvice": "Provide custom, high-impact career progression insights based on the quality of domain expertise demonstrated."
+}`;
+
+    const userPrompt = `Target Profession Context:
+Question: "${question}"
+User Answer: "${userAnswer}"
+Target Company Context: "${context.company}"
+Target Industry Context: "${context.industry}"`;
+
+    let attempt = 0;
+    while (attempt < 2) {
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            if (!response.ok) throw new Error(`Network status error: ${response.status}`);
+
+            const data = await response.json();
+            const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
+            return JSON.parse(rawText);
+        } catch (error) {
+            console.warn(`Evaluation pipeline error on attempt ${attempt + 1}:`, error);
+        }
+        attempt++;
     }
-    `;
-
-    const userPrompt = `Interview Question: "${question}"\nUser's Answer: "${userAnswer}"`;
-
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
-                generationConfig: { responseMimeType: "application/json" }
-            })
-        });
-
-        const data = await response.json();
-        const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
-        return JSON.parse(rawText);
-    } catch (error) {
-        console.error("Error communicating with Gemini:", error);
-        return null;
-    }
+    return null;
 }
 
 // UI functions managing application layout transitions
@@ -167,7 +208,7 @@ function renderCurrentQuestion() {
     
     // Update structural progress bar metrics
     const totalCount = currentInterviewQuestions.length;
-    const progressPercent = ((currentQuestionIndex) / totalCount) * 100;
+    const progressPercent = (currentQuestionIndex / totalCount) * 100;
     document.getElementById('progressFill').style.width = `${progressPercent}%`;
     document.getElementById('progressText').innerText = `Question ${currentQuestionIndex + 1} of ${totalCount}`;
 
@@ -259,7 +300,10 @@ window.submitAnswer = async function() {
         document.getElementById('fbStrengths').innerText = feedback.strengths;
         document.getElementById('fbWeaknesses').innerText = feedback.improvements;
         document.getElementById('fbSuggestion').innerText = feedback.suggested;
-        document.getElementById('fbExample').innerText = feedback.example;
+        
+        // Append Career Advice parameters into example box safely
+        const displayAdvice = feedback.careerAdvice ? `\n\nCareer Progression Tip: ${feedback.careerAdvice}` : "";
+        document.getElementById('fbExample').innerText = `${feedback.example}${displayAdvice}`;
         
         document.getElementById('feedbackPanel').classList.add('visible');
         
@@ -276,7 +320,7 @@ window.submitAnswer = async function() {
         const actionRow = document.querySelector('.action-row');
         if (actionRow) actionRow.style.display = 'none';
     } else {
-        alert("Unable to process feedback. Check your API key or connection.");
+        alert("Unable to process feedback. Check your API key or network connection.");
         document.getElementById('answerBox').disabled = false;
     }
     
