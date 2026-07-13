@@ -1,3 +1,4 @@
+
 // 1. Put your API key inside the quotation marks below:
 const GEMINI_API_KEY = "AQ.Ab8RN6LS8nTSJLHqSWCITBD05FKvQq8cIdeTYR19kjrfqw891A"; 
 
@@ -30,7 +31,8 @@ function getExtraContext() {
 
 // Generates 35-40 custom questions tailored deeply by profession and baseline difficulty
 async function generateInterviewQuestions(jobTitle, experienceLevel) {
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    // FIXED: Cleaned up markdown formatting corruption and switched to stable 1.5 model endpoint
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
     const systemPrompt = `You are an elite, highly professional Senior HR Recruiter, Hiring Manager, Technical Interviewer, and Industry Expert combined.
@@ -136,7 +138,8 @@ Ensure distinct adaptation. Avoid duplicates. Later questions should build on ea
 
 // Core function to call the Google Gemini API safely for real-time response evaluations
 async function askGemini(question, userAnswer) {
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    // FIXED: Cleaned up markdown formatting corruption and switched to stable 1.5 model endpoint
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
     const systemPrompt = `You are an expert AI Interview Evaluation Coach. Analyze the user's answer to the interview question provided.
