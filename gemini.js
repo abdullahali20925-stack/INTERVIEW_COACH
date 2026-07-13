@@ -1,5 +1,4 @@
-
-// 1. Put your API key inside the quotation marks below:
+// 1. Double-check your API key string below (ensure no trailing or leading spaces)
 const GEMINI_API_KEY = "AQ.Ab8RN6Ll04W4LprJy3ur_nFbOlzUVIbUzJlnIfHYmAzzkoTTYg"; 
 
 // Global state tracking interview questions and user scores
@@ -7,7 +6,7 @@ let currentInterviewQuestions = [];
 let currentQuestionIndex = 0;
 let interviewScores = [];
 
-// Helper to format string responses to prevent common JSON issues
+// Helper to clean markdown block fences if returned by the API fallback
 function cleanJsonString(str) {
     let clean = str.trim();
     if (clean.startsWith("```json")) {
@@ -29,140 +28,90 @@ function getExtraContext() {
     return { company, industry, description };
 }
 
-// Generates 35-40 custom questions tailored deeply by profession and baseline difficulty
+// Generates custom questions tailored deeply by profession and baseline difficulty
 async function generateInterviewQuestions(jobTitle, experienceLevel) {
-    // FIXED: Cleaned up markdown formatting corruption and switched to stable 1.5 model endpoint
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
-    const systemPrompt = `You are an elite, highly professional Senior HR Recruiter, Hiring Manager, Technical Interviewer, and Industry Expert combined.
+    const systemPrompt = `You are an elite Senior HR Recruiter and Hiring Manager.
 Your objective is to design a realistic, fully customized, high-fidelity interview plan tailored exactly to the provided job title, experience level, and additional parameters.
 
-CRITICAL STEP-BY-STEP INTERNAL ANALYSIS PATHWAY:
-Before formulating any single question, you must thoroughly evaluate and infer the following attributes related to the profession:
-1. Core daily operational workflows and unique metrics for performance success.
-2. Hard skills, specialized domain tooling, specialized frameworks, hardware, or stack choices.
-3. Universal industry regulations, corporate guidelines, certification rules, and methodologies.
-4. Essential soft skills, collaborative pathways, conflict points, and communication demands.
-5. Common interview themes, industry shifts, and typical filters used by real field experts.
-6. Nuanced expectations between professional levels: Beginner/Junior vs Intermediate vs Advanced/Leadership.
+Structure the pool dynamically into a continuous sequence that simulates an organic interview flow.
+Scale difficulty dynamically as the list index grows (Easy -> Medium -> Hard -> Expert).
+Generate at least 30 unique questions tailored strictly to this role without repetition.`;
 
-GENERATION BLUEPRINT & FLOW RULES:
-- Generate between 35 and 40 unique, realistic, highly specialized interview questions.
-- Never repeat phrasing or baseline formats. Every profession must yield a radically different line of questioning.
-- Avoid generic interview templates (e.g., do not ask generic things like "Tell me about a time you failed" unless heavily adapted to specific high-stakes profession metrics).
-- Structure the pool dynamically into a continuous sequence that simulates an organic interview flow, transitioning naturally where later categories build upon operational concepts of earlier questions.
-- Scale difficulty dynamically as the list index grows (Easy -> Medium -> Hard -> Expert).
-- Approximate allocation bucket targets:
-  * 5 HR / Alignment Questions
-  * 5 Behavioral Questions
-  * 5 Experience & Background Dynamics
-  * 5 Technical Fundamentals / Basic Domain Systems
-  * 5 Practical Skills / Live Operational Application Tasks
-  * 5 Scenario-Based / Critical Incidents
-  * 5 Complex Problem Solving Dilemmas
-  * 3 Target Company / Cultural Values Fit Questions
-  * 3 Leadership & Mentorship Operations (or cross-team design architectures if leadership is less relevant to target profile)
-  * 4 Advanced Analytical or Strategic Progression Questions
-
-You must output ONLY a valid JSON string. Do not wrap it in markdown block fences, do not write code comments, do not include extra introduction text, and do not append additional trailing text.
-
-The JSON response format must strictly match this structure:
-{
-  "job": "Clean Job Title String",
-  "questions": [
-    {
-      "id": 1,
-      "category": "Category Label",
-      "difficulty": "Easy",
-      "question": "The actual text of the question tailored strictly to this role."
-    }
-  ]
-}`;
-
-    const userPrompt = `Generate a master customized interview set of 35-40 sequential questions for the profession: "${jobTitle}".
+    const userPrompt = `Generate a master customized interview set of sequential questions for the profession: "${jobTitle}".
 Baseline Experience Tier Target: "${experienceLevel}".
 Target Company: "${context.company}"
 Industry Context: "${context.industry}"
-Job Description context elements: "${context.description}"
+Job Description context elements: "${context.description}"`;
 
-Ensure distinct adaptation. Avoid duplicates. Later questions should build on earlier concepts to preserve contextual flow. Return valid JSON only.`;
-
-    let attempt = 0;
-    while (attempt < 2) {
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
-
-            if (!response.ok) throw new Error(`Network status error: ${response.status}`);
-            
-            const data = await response.json();
-            if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error("Empty text token stream received from API.");
-            
-            const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
-            const parsed = JSON.parse(rawText);
-
-            if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 35) {
-                const validQuestions = [];
-                const seenTexts = new Set();
-
-                parsed.questions.forEach((q, index) => {
-                    if (q.question && !seenTexts.has(q.question.toLowerCase())) {
-                        seenTexts.add(q.question.toLowerCase());
-                        validQuestions.push({
-                            id: index + 1,
-                            category: q.category || "Domain Practice",
-                            difficulty: q.difficulty || "Standard",
-                            question: q.question
-                        });
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    // Enforces strict JSON structural constraints directly on Google's model
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            job: { type: "STRING" },
+                            questions: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        id: { type: "INTEGER" },
+                                        category: { type: "STRING" },
+                                        difficulty: { type: "STRING" },
+                                        question: { type: "STRING" }
+                                    },
+                                    required: ["id", "category", "difficulty", "question"]
+                                }
+                            }
+                        },
+                        required: ["job", "questions"]
                     }
-                });
-
-                if (validQuestions.length >= 30) {
-                    return validQuestions;
                 }
-            }
-        } catch (e) {
-            console.warn(`Attempt ${attempt + 1} failed to construct valid interview payload. Retrying...`, e);
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            console.error("Google API Server Error Response:", errData);
+            throw new Error(`HTTP Status ${response.status}`);
         }
-        attempt++;
+        
+        const data = await response.json();
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error("Empty token stream returned.");
+        
+        const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
+        const parsed = JSON.parse(rawText);
+
+        if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+            return parsed.questions.map((q, index) => ({
+                id: index + 1,
+                category: q.category || "General Domain",
+                difficulty: q.difficulty || "Standard",
+                question: q.question
+            }));
+        }
+    } catch (e) {
+        console.error("Critical failure inside generateInterviewQuestions pipeline:", e);
     }
     return null;
 }
 
 // Core function to call the Google Gemini API safely for real-time response evaluations
 async function askGemini(question, userAnswer) {
-    // FIXED: Cleaned up markdown formatting corruption and switched to stable 1.5 model endpoint
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
     const systemPrompt = `You are an expert AI Interview Evaluation Coach. Analyze the user's answer to the interview question provided.
-You must critique the response comprehensively across these distinct performance matrices:
-- Technical Accuracy (Domain correctness)
-- Communication (Clarity and structural expression)
-- Confidence (Decisiveness and narrative authority)
-- Completeness (Answering all facets of the prompt promptly)
-- Problem Solving (Analytical logic and pathing)
-- Industry Knowledge (Application of professional metrics and terminology)
-- Professionalism (Business alignment and delivery poise)
-
-You MUST respond ONLY with a clean JSON object. Do not include markdown formatting, backticks, or trailing prose blocks outside the valid JSON.
-
-The JSON structure must match this EXACTLY:
-{
-    "score": 8,
-    "strengths": "Provide a thorough bulleted list or narrative of technical and communication items performed well.",
-    "improvements": "Identify specific gaps where data, technical nuances, or framework steps were missing.",
-    "suggested": "Give an actionable step-by-step strategy to restructure or optimize this specific answer.",
-    "example": "Write a strong, professional example model answer customized to the targeted profession and company scenario.",
-    "careerAdvice": "Provide custom, high-impact career progression insights based on the quality of domain expertise demonstrated."
-}`;
+You must critique the response comprehensively across performance matrices: Technical Accuracy, Communication, Confidence, and Completeness.`;
 
     const userPrompt = `Target Profession Context:
 Question: "${question}"
@@ -170,27 +119,38 @@ User Answer: "${userAnswer}"
 Target Company Context: "${context.company}"
 Target Industry Context: "${context.industry}"`;
 
-    let attempt = 0;
-    while (attempt < 2) {
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    // Enforces exact key structure constraint for feedback generation
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            score: { type: "INTEGER" },
+                            strengths: { type: "STRING" },
+                            improvements: { type: "STRING" },
+                            suggested: { type: "STRING" },
+                            example: { type: "STRING" },
+                            careerAdvice: { type: "STRING" }
+                        },
+                        required: ["score", "strengths", "improvements", "suggested", "example", "careerAdvice"]
+                    }
+                }
+            })
+        });
 
-            if (!response.ok) throw new Error(`Network status error: ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
 
-            const data = await response.json();
-            const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
-            return JSON.parse(rawText);
-        } catch (error) {
-            console.warn(`Evaluation pipeline error on attempt ${attempt + 1}:`, error);
-        }
-        attempt++;
+        const data = await response.json();
+        const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
+        return JSON.parse(rawText);
+    } catch (error) {
+        console.error("Critical failure inside askGemini pipeline:", error);
     }
     return null;
 }
@@ -204,18 +164,15 @@ function renderCurrentQuestion() {
 
     const currentQ = currentInterviewQuestions[currentQuestionIndex];
     
-    // Update headers and content trackers
     document.getElementById('qNum').innerText = `Q${currentQ.id}`;
     document.getElementById('qCategory').innerText = `${currentQ.category} · ${currentQ.difficulty}`;
     document.getElementById('qText').innerText = currentQ.question;
     
-    // Update structural progress bar metrics
     const totalCount = currentInterviewQuestions.length;
     const progressPercent = (currentQuestionIndex / totalCount) * 100;
     document.getElementById('progressFill').style.width = `${progressPercent}%`;
     document.getElementById('progressText').innerText = `Question ${currentQuestionIndex + 1} of ${totalCount}`;
 
-    // Reset input states
     document.getElementById('answerBox').value = "";
     document.getElementById('answerBox').disabled = false;
     document.getElementById('wordCount').innerText = "0";
@@ -232,7 +189,6 @@ window.startInterview = async function() {
     const startBtn = document.getElementById('startBtn');
     const originalBtnText = startBtn.innerHTML;
     
-    // Extract interactive user configs
     const roleTitle = selectedRole === 'custom' 
         ? document.getElementById('customRoleInput').value.trim() 
         : ROLES.find(r => r.id === selectedRole)?.title;
@@ -243,13 +199,12 @@ window.startInterview = async function() {
     const generated = await generateInterviewQuestions(roleTitle, selectedDiff);
 
     if (!generated || generated.length === 0) {
-        alert("Friendly notice: We encountered an issue setting up the customized interview questions. Please verify your connection configuration or try again.");
+        alert("Friendly notice: We encountered an issue setting up the customized interview questions. Please open your Developer Console (F12) to inspect the error log or verify your API key access tier configuration.");
         startBtn.innerHTML = originalBtnText;
         startBtn.disabled = false;
         return;
     }
 
-    // Initialize simulation parameters
     currentInterviewQuestions = generated;
     currentQuestionIndex = 0;
     interviewScores = [];
@@ -257,11 +212,9 @@ window.startInterview = async function() {
     document.getElementById('headerRole').innerText = roleTitle || "Interviewee";
     document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
     
-    // Swap screen frames cleanly
     document.getElementById('landing').classList.remove('active');
     document.getElementById('interview').classList.add('active');
     
-    // Restore primary landing frame start button text states
     startBtn.innerHTML = originalBtnText;
     startBtn.disabled = false;
 
@@ -304,7 +257,6 @@ window.submitAnswer = async function() {
         document.getElementById('fbWeaknesses').innerText = feedback.improvements;
         document.getElementById('fbSuggestion').innerText = feedback.suggested;
         
-        // Append Career Advice parameters into example box safely
         const displayAdvice = feedback.careerAdvice ? `\n\nCareer Progression Tip: ${feedback.careerAdvice}` : "";
         document.getElementById('fbExample').innerText = `${feedback.example}${displayAdvice}`;
         
@@ -313,7 +265,6 @@ window.submitAnswer = async function() {
         document.getElementById('meterBar').style.width = `${score * 10}%`;
         document.getElementById('meterVal').innerText = `${score * 10}%`;
 
-        // Cache parameters to render final metrics overview page safely
         interviewScores.push({
             question: question,
             category: currentInterviewQuestions[currentQuestionIndex].category,
@@ -323,7 +274,7 @@ window.submitAnswer = async function() {
         const actionRow = document.querySelector('.action-row');
         if (actionRow) actionRow.style.display = 'none';
     } else {
-        alert("Unable to process feedback. Check your API key or network connection.");
+        alert("Unable to process feedback. Check your API key or network connection logs.");
         document.getElementById('answerBox').disabled = false;
     }
     
@@ -378,7 +329,6 @@ function finishAndShowResults() {
     document.getElementById('resultsVerdict').innerText = verdict;
     document.getElementById('resultsSubtitle').innerText = subtitle;
 
-    // Collate dynamic Category breakdowns
     const categoriesMap = {};
     interviewScores.forEach(s => {
         if (!categoriesMap[s.category]) {
