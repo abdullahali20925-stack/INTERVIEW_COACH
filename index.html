@@ -683,10 +683,10 @@ body {
       <a href="#pick-role" class="btn-primary" style="text-decoration:none;">Start practising →</a>
     </div>
     <div class="hero-badges">
-      <span class="hero-badge">8 specialised roles</span>
-      <span class="hero-badge">30+ questions per role</span>
+      <span class="hero-badge">Dynamic Roles</span>
+      <span class="hero-badge">35-40 Tailored Questions</span>
       <span class="hero-badge">AI feedback on every answer</span>
-      <span class="hero-badge">3 difficulty levels</span>
+      <span class="hero-badge">Progressive difficulties</span>
     </div>
   </div>
 
@@ -697,13 +697,13 @@ body {
         <div class="step-num">Step 01</div>
         <div class="step-icon">🎯</div>
         <div class="step-title">Select your role</div>
-        <div class="step-desc">Choose from 8 specialised roles or enter your own.</div>
+        <div class="step-desc">Choose from specialised roles or enter your own custom profession.</div>
       </div>
       <div class="step">
         <div class="step-num">Step 02</div>
         <div class="step-icon">💬</div>
         <div class="step-title">Answer questions</div>
-        <div class="step-desc">Five role-specific questions — technical, behavioural, situational.</div>
+        <div class="step-desc">A deep, full-length interview structured dynamically by an AI Recruiter.</div>
       </div>
       <div class="step">
         <div class="step-num">Step 03</div>
@@ -715,7 +715,7 @@ body {
         <div class="step-num">Step 04</div>
         <div class="step-icon">🚀</div>
         <div class="step-title">Improve &amp; repeat</div>
-        <div class="step-desc">Review your summary and practise until you're confident.</div>
+        <div class="step-desc">Review your summary and practice until you're confident.</div>
       </div>
     </div>
   </div>
@@ -862,44 +862,17 @@ body {
 
 <script>
 const ROLES = [
-  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
-  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
-  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
-  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
-  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
-  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
-  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
-  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'Dynamic' },
+  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'Dynamic' },
+  { id:'accountant',icon:'📒', title:'Accountant',           count:'Dynamic' },
+  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'Dynamic' },
+  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'Dynamic' },
+  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'Dynamic' },
+  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'Dynamic' },
+  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'Dynamic' },
   { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
 ];
 
-const QB = {
-  swe: [
-    { q:'Tell me about yourself and your programming background.', cat:'Introduction', diff:'beginner' },
-    { q:'What programming languages are you most comfortable with and why?', cat:'Technical', diff:'beginner' },
-    { q:'Can you explain the difference between an array and a linked list?', cat:'Technical', diff:'beginner' },
-    { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
-    { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
-    { q:'What is the difference between frontend and backend development?', cat:'Technical', diff:'beginner' },
-    { q:'Tell me about a time you had to learn a new technology quickly. How did you handle it?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you ensure your code is readable by others?', cat:'Communication', diff:'beginner' },
-    { q:'What do you do when you\'re stuck on a problem for more than an hour?', cat:'Problem Solving', diff:'beginner' },
-    { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
-    { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
-    { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
-    { q:'Describe a time a bug you introduced caused a significant problem. How did you resolve it?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you approach code reviews — both when reviewing others\' code and receiving feedback?', cat:'Communication', diff:'intermediate' },
-    { q:'Explain the concept of time complexity. Give an example where choosing the wrong algorithm caused performance issues.', cat:'Technical', diff:'intermediate' },
-    { q:'Tell me about a time you disagreed with a technical decision on your team. What did you do?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you balance writing tests versus shipping features quickly?', cat:'Problem Solving', diff:'intermediate' },
-    { q:'Describe a situation where you had to refactor a large piece of legacy code. What was your approach?', cat:'Situational', diff:'intermediate' },
-    { q:'How do you stay up to date with new technologies and best practices?', cat:'Communication', diff:'intermediate' },
-    { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
-  ]
-};
-
-// Application state and setup functions
 let selectedRole = '';
 let selectedDiff = 'beginner';
 
