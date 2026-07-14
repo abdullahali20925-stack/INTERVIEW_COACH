@@ -1,14 +1,26 @@
-// 1. Put your API key inside the quotation marks below:
-const GEMINI_API_KEY = "AQ.Ab8RN6K3LUNVYrn5SOxt4Ld9nOrAPHyL3k_hUqe_MCfLqPwa2Q"; 
-
 // Active state of the ongoing session
 let generatedQuestions = [];
 let currentQuestionIndex = 0;
 let userAnswersData = []; // Stores questions, user answers, and scores
 
-// 2. NEW: Generate customized questions from the Gemini API
+// Helper function to safely read the user's API Key from browser local storage or input field
+function getApiKey() {
+    const keyInput = document.getElementById('userApiKey');
+    if (keyInput && keyInput.value.trim() !== "") {
+        return keyInput.value.trim();
+    }
+    return localStorage.getItem('gemini_api_key') || "";
+}
+
+// 2. Generate customized questions from the Gemini API
 async function generateQuestions(role, difficulty) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert("API Key is missing! Please paste your Gemini API Key in the input field first.");
+        return null;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const prompt = `
     You are an elite, world-class executive recruiter and technical interviewer.
@@ -59,7 +71,13 @@ async function generateQuestions(role, difficulty) {
 
 // 3. Core function to analyze user answers
 async function askGemini(question, userAnswer) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert("API Key is missing!");
+        return null;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
     You are an expert Interview Coach. Analyze the user's answer to the interview question provided.
