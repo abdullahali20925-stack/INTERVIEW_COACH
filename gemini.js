@@ -1,3 +1,4 @@
+
 // 1. Double-check your API key string below (ensure no trailing or leading spaces)
 const GEMINI_API_KEY = "AQ.Ab8RN6Ll04W4LprJy3ur_nFbOlzUVIbUzJlnIfHYmAzzkoTTYg"; 
 
@@ -38,7 +39,7 @@ Your objective is to design a realistic, fully customized, high-fidelity intervi
 
 Structure the pool dynamically into a continuous sequence that simulates an organic interview flow.
 Scale difficulty dynamically as the list index grows (Easy -> Medium -> Hard -> Expert).
-Generate at least 30 unique questions tailored strictly to this role without repetition.`;
+Generate at least 5 unique questions tailored strictly to this role without repetition.`;
 
     const userPrompt = `Generate a master customized interview set of sequential questions for the profession: "${jobTitle}".
 Baseline Experience Tier Target: "${experienceLevel}".
@@ -54,7 +55,6 @@ Job Description context elements: "${context.description}"`;
                 contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
                 generationConfig: {
                     responseMimeType: "application/json",
-                    // Enforces strict JSON structural constraints directly on Google's model
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
@@ -127,7 +127,6 @@ Target Industry Context: "${context.industry}"`;
                 contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
                 generationConfig: {
                     responseMimeType: "application/json",
-                    // Enforces exact key structure constraint for feedback generation
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
@@ -189,14 +188,14 @@ window.startInterview = async function() {
     const startBtn = document.getElementById('startBtn');
     const originalBtnText = startBtn.innerHTML;
     
-    const roleTitle = selectedRole === 'custom' 
+    const roleTitle = window.selectedRole === 'custom' 
         ? document.getElementById('customRoleInput').value.trim() 
-        : ROLES.find(r => r.id === selectedRole)?.title;
+        : ROLES.find(r => r.id === window.selectedRole)?.title;
         
     startBtn.innerHTML = `<span class="spinner"></span> Building customized interview...`;
     startBtn.disabled = true;
 
-    const generated = await generateInterviewQuestions(roleTitle, selectedDiff);
+    const generated = await generateInterviewQuestions(roleTitle, window.selectedDiff);
 
     if (!generated || generated.length === 0) {
         alert("Friendly notice: We encountered an issue setting up the customized interview questions. Please open your Developer Console (F12) to inspect the error log or verify your API key access tier configuration.");
@@ -210,7 +209,7 @@ window.startInterview = async function() {
     interviewScores = [];
 
     document.getElementById('headerRole').innerText = roleTitle || "Interviewee";
-    document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
+    document.getElementById('headerDiff').innerText = window.selectedDiff.toUpperCase();
     
     document.getElementById('landing').classList.remove('active');
     document.getElementById('interview').classList.add('active');
@@ -301,9 +300,9 @@ function finishAndShowResults() {
     document.getElementById('interview').classList.remove('active');
     document.getElementById('results').classList.add('active');
 
-    const roleTitle = selectedRole === 'custom' 
+    const roleTitle = window.selectedRole === 'custom' 
         ? document.getElementById('customRoleInput').value.trim() 
-        : ROLES.find(r => r.id === selectedRole)?.title;
+        : ROLES.find(r => r.id === window.selectedRole)?.title;
 
     document.getElementById('resultsRole').innerText = (roleTitle || "Profession").toUpperCase();
 
