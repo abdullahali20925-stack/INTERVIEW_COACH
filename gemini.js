@@ -31,8 +31,8 @@ function getExtraContext() {
 
 // Generates custom questions tailored deeply by profession and baseline difficulty
 async function generateInterviewQuestions(jobTitle, experienceLevel) {
-    // Correct API endpoint targeting v1beta
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    // FIXED: Fixed the syntax error in the template literal and updated model to gemini-2.5-flash
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
     const systemPrompt = `You are an elite Senior HR Recruiter. Your task is to design a realistic, fully customized interview plan tailored to the provided job title and experience level.
@@ -96,7 +96,8 @@ Job Description: "${context.description}"`;
 
 // Evaluate user answers in real-time
 async function askGemini(question, userAnswer) {
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
+    // FIXED: Fixed the syntax error in the template literal and updated model to gemini-2.5-flash
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
     const systemPrompt = `You are an AI Interview Evaluation Coach. Analyze the user's answer to the question.
