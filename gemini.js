@@ -1,5 +1,5 @@
 // 1. Put your API key inside the quotation marks below:
-const GEMINI_API_KEY = "AQ.Ab8RN6KYeD7h7JASui0VVE_2ByhO2CdiGorPH0GG_jN9kjKF-A"; 
+const GEMINI_API_KEY = "AQ.Ab8RN6IU8hd2x-ES773cT0EZjsZBW6S7FQ7M1zVYuhsKn5xc7w"; 
 
 // 2. Core function to call the Google Gemini API safely
 async function askGemini(question, userAnswer) {
