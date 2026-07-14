@@ -1,5 +1,5 @@
 // 1. Paste your API key here (ensure no spaces around it)
-const GEMINI_API_KEY = "AQ.Ab8RN6Ll04W4LprJy3ur_nFbOlzUVIbUzJlnIfHYmAzzkoTTYg"; 
+const GEMINI_API_KEY = "AQ.Ab8RN6Iste2B6iVUmF3mTLmWVLFEgUN5vGXdU1jkwJyerzyDug"; 
 
 // Global state tracking
 let currentInterviewQuestions = [];
