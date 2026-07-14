@@ -1,13 +1,12 @@
-
-// 1. Double-check your API key string below (ensure no trailing or leading spaces)
+// 1. Paste your API key here (ensure no spaces around it)
 const GEMINI_API_KEY = "AQ.Ab8RN6Ll04W4LprJy3ur_nFbOlzUVIbUzJlnIfHYmAzzkoTTYg"; 
 
-// Global state tracking interview questions and user scores
+// Global state tracking
 let currentInterviewQuestions = [];
 let currentQuestionIndex = 0;
 let interviewScores = [];
 
-// Helper to clean markdown block fences if returned by the API fallback
+// Helper to clean markdown fences safely if the API returns them in a raw text block
 function cleanJsonString(str) {
     let clean = str.trim();
     if (clean.startsWith("```json")) {
@@ -21,7 +20,7 @@ function cleanJsonString(str) {
     return clean.trim();
 }
 
-// Helper to compile metadata context for prompt engineering
+// Helper to compile metadata context
 function getExtraContext() {
     const company = document.getElementById('companyInput')?.value.trim() || "Unspecified Target Company";
     const industry = document.getElementById('industryInput')?.value.trim() || "General Industry Sector";
@@ -31,21 +30,30 @@ function getExtraContext() {
 
 // Generates custom questions tailored deeply by profession and baseline difficulty
 async function generateInterviewQuestions(jobTitle, experienceLevel) {
+    // Correct API endpoint targeting v1beta
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
-    const systemPrompt = `You are an elite Senior HR Recruiter and Hiring Manager.
-Your objective is to design a realistic, fully customized, high-fidelity interview plan tailored exactly to the provided job title, experience level, and additional parameters.
+    const systemPrompt = `You are an elite Senior HR Recruiter. Your task is to design a realistic, fully customized interview plan tailored to the provided job title and experience level.
+You MUST respond with a JSON object matching this exact schema:
+{
+  "job": "string",
+  "questions": [
+    {
+      "id": 1,
+      "category": "string",
+      "difficulty": "string",
+      "question": "string"
+    }
+  ]
+}
+Generate exactly 5 unique questions.`;
 
-Structure the pool dynamically into a continuous sequence that simulates an organic interview flow.
-Scale difficulty dynamically as the list index grows (Easy -> Medium -> Hard -> Expert).
-Generate at least 5 unique questions tailored strictly to this role without repetition.`;
-
-    const userPrompt = `Generate a master customized interview set of sequential questions for the profession: "${jobTitle}".
-Baseline Experience Tier Target: "${experienceLevel}".
+    const userPrompt = `Generate a set of sequential questions for: "${jobTitle}".
+Experience level: "${experienceLevel}".
 Target Company: "${context.company}"
 Industry Context: "${context.industry}"
-Job Description context elements: "${context.description}"`;
+Job Description: "${context.description}"`;
 
     try {
         const response = await fetch(url, {
@@ -54,27 +62,7 @@ Job Description context elements: "${context.description}"`;
             body: JSON.stringify({
                 contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
                 generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            job: { type: "STRING" },
-                            questions: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        id: { type: "INTEGER" },
-                                        category: { type: "STRING" },
-                                        difficulty: { type: "STRING" },
-                                        question: { type: "STRING" }
-                                    },
-                                    required: ["id", "category", "difficulty", "question"]
-                                }
-                            }
-                        },
-                        required: ["job", "questions"]
-                    }
+                    responseMimeType: "application/json"
                 }
             })
         });
@@ -86,12 +74,12 @@ Job Description context elements: "${context.description}"`;
         }
         
         const data = await response.json();
-        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error("Empty token stream returned.");
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error("Empty response returned.");
         
         const rawText = cleanJsonString(data.candidates[0].content.parts[0].text);
         const parsed = JSON.parse(rawText);
 
-        if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        if (parsed && Array.isArray(parsed.questions)) {
             return parsed.questions.map((q, index) => ({
                 id: index + 1,
                 category: q.category || "General Domain",
@@ -105,19 +93,26 @@ Job Description context elements: "${context.description}"`;
     return null;
 }
 
-// Core function to call the Google Gemini API safely for real-time response evaluations
+// Evaluate user answers in real-time
 async function askGemini(question, userAnswer) {
     const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){GEMINI_API_KEY}`;
     const context = getExtraContext();
 
-    const systemPrompt = `You are an expert AI Interview Evaluation Coach. Analyze the user's answer to the interview question provided.
-You must critique the response comprehensively across performance matrices: Technical Accuracy, Communication, Confidence, and Completeness.`;
+    const systemPrompt = `You are an AI Interview Evaluation Coach. Analyze the user's answer to the question.
+You MUST respond with a JSON object matching this schema:
+{
+  "score": 8, // Integer out of 10
+  "strengths": "string",
+  "improvements": "string",
+  "suggested": "string",
+  "example": "string",
+  "careerAdvice": "string"
+}`;
 
-    const userPrompt = `Target Profession Context:
-Question: "${question}"
+    const userPrompt = `Question: "${question}"
 User Answer: "${userAnswer}"
-Target Company Context: "${context.company}"
-Target Industry Context: "${context.industry}"`;
+Target Company: "${context.company}"
+Industry: "${context.industry}"`;
 
     try {
         const response = await fetch(url, {
@@ -126,19 +121,7 @@ Target Industry Context: "${context.industry}"`;
             body: JSON.stringify({
                 contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
                 generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            score: { type: "INTEGER" },
-                            strengths: { type: "STRING" },
-                            improvements: { type: "STRING" },
-                            suggested: { type: "STRING" },
-                            example: { type: "STRING" },
-                            careerAdvice: { type: "STRING" }
-                        },
-                        required: ["score", "strengths", "improvements", "suggested", "example", "careerAdvice"]
-                    }
+                    responseMimeType: "application/json"
                 }
             })
         });
@@ -154,7 +137,7 @@ Target Industry Context: "${context.industry}"`;
     return null;
 }
 
-// UI functions managing application layout transitions
+// UI Functions
 function renderCurrentQuestion() {
     if (currentQuestionIndex >= currentInterviewQuestions.length) {
         finishAndShowResults();
@@ -198,7 +181,7 @@ window.startInterview = async function() {
     const generated = await generateInterviewQuestions(roleTitle, window.selectedDiff);
 
     if (!generated || generated.length === 0) {
-        alert("Friendly notice: We encountered an issue setting up the customized interview questions. Please open your Developer Console (F12) to inspect the error log or verify your API key access tier configuration.");
+        alert("Friendly notice: We encountered an issue setting up the interview. Open your console (F12) to inspect the error log.");
         startBtn.innerHTML = originalBtnText;
         startBtn.disabled = false;
         return;
@@ -273,7 +256,7 @@ window.submitAnswer = async function() {
         const actionRow = document.querySelector('.action-row');
         if (actionRow) actionRow.style.display = 'none';
     } else {
-        alert("Unable to process feedback. Check your API key or network connection logs.");
+        alert("Unable to process feedback. Check your API key or network connection.");
         document.getElementById('answerBox').disabled = false;
     }
     
@@ -361,14 +344,14 @@ function finishAndShowResults() {
             recsHtml += `
             <div class="rec-item">
               <div class="rec-num">0${recCounter++}</div>
-              <div><strong>Expand on ${cat}:</strong> Focus on adding technical keywords, structural framework approaches, and practical business metrics to your examples.</div>
+              <div><strong>Expand on ${cat}:</strong> Focus on adding technical keywords, structural frameworks, and metrics to your answers.</div>
             </div>`;
         }
     });
 
     if (!strongSkillsHtml) strongSkillsHtml = '<div class="results-skill">General Baseline Answers</div>';
     if (!weakSkillsHtml) weakSkillsHtml = '<div class="results-skill">None identified. Consistent responses!</div>';
-    if (!recsHtml) recsHtml = '<div class="rec-item"><div class="rec-num">✓</div><div>Fantastic session. Review alternate difficulty levels for more challenging industry problem tracks.</div></div>';
+    if (!recsHtml) recsHtml = '<div class="rec-item"><div class="rec-num">✓</div><div>Fantastic session. Review alternate difficulty levels for more challenging tracks.</div></div>';
 
     document.getElementById('scoreRows').innerHTML = scoreRowsHtml;
     document.getElementById('strongSkills').innerHTML = strongSkillsHtml;
@@ -391,6 +374,6 @@ window.copyResults = function() {
     navigator.clipboard.writeText(textToCopy).then(() => {
         alert("Results summary copied to clipboard!");
     }).catch(() => {
-        alert("Could not automatically copy text to clipboard.");
+        alert("Could not automatically copy text.");
     });
 };
