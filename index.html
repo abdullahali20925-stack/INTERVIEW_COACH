@@ -1,12 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Interview Coach — Practice Real Interviews</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+<link href="[https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap](https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap)" rel="stylesheet">
 <style>
 /* ─── RESET & TOKENS ─────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -903,8 +902,8 @@ const ROLES = [
   { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
 ];
 
-let selectedRole = '';
-let selectedDiff = 'beginner';
+window.selectedRole = '';
+window.selectedDiff = 'beginner';
 
 document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('rolesGrid');
@@ -921,7 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function selectRole(id) {
     document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`card-${id}`).classList.add('selected');
-    selectedRole = id;
+    window.selectedRole = id;
     document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
     checkStartValidity();
 }
@@ -929,15 +928,15 @@ function selectRole(id) {
 function setDiff(btn) {
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    selectedDiff = btn.getAttribute('data-diff');
+    window.selectedDiff = btn.getAttribute('data-diff');
 }
 
 function onCustomInput() { checkStartValidity(); }
 
 function checkStartValidity() {
     const btn = document.getElementById('startBtn');
-    if (!selectedRole) return btn.disabled = true;
-    if (selectedRole === 'custom') {
+    if (!window.selectedRole) return btn.disabled = true;
+    if (window.selectedRole === 'custom') {
         btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
     } else {
         btn.disabled = false;
