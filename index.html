@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -226,6 +227,31 @@ body {
 }
 .role-section-title { font-size: 22px; font-weight: 600; margin-bottom: .5rem; }
 .role-section-sub { font-size: 14px; color: var(--t2); }
+
+/* API Key Box styling */
+.key-container {
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: left;
+}
+.key-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue-lt);
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.key-hint {
+  font-size: 11px;
+  color: var(--t3);
+  margin: 0;
+}
 
 /* Difficulty selector */
 .diff-row {
@@ -726,14 +752,23 @@ body {
       <p class="role-section-sub">Questions adapt based on the difficulty you select</p>
     </div>
 
+    <!-- 🔑 SAFE API KEY INPUT CARD -->
+    <div class="key-container">
+      <label class="key-label" for="userApiKey">🔑 Enter Gemini API Key</label>
+      <input type="password" id="userApiKey" class="custom-role-input" style="margin-bottom: 8px;"
+        placeholder="AIzaSy..." oninput="saveApiKey()" />
+      <p class="key-hint">
+        Your key is stored safely in your browser and is never sent to our code or servers. Only to Google.
+      </p>
+    </div>
+
     <div class="diff-row">
       <button class="diff-btn active" data-diff="beginner" onclick="setDiff(this)">🌱 Beginner</button>
       <button class="diff-btn" data-diff="intermediate" onclick="setDiff(this)">⚡ Intermediate</button>
       <button class="diff-btn" data-diff="advanced" onclick="setDiff(this)">🔥 Advanced</button>
     </div>
 
-    <div class="roles-grid" id="rolesGrid">
-      </div>
+    <div class="roles-grid" id="rolesGrid"></div>
 
     <div id="customWrap" style="display:none;">
       <input type="text" class="custom-role-input" id="customRoleInput"
@@ -860,91 +895,8 @@ body {
   </div>
 </div>
 
-<script>
-const ROLES = [
-  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
-  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
-  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
-  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
-  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
-  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
-  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
-  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
-  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
-];
-
-const QB = {
-  swe: [
-    { q:'Tell me about yourself and your programming background.', cat:'Introduction', diff:'beginner' },
-    { q:'What programming languages are you most comfortable with and why?', cat:'Technical', diff:'beginner' },
-    { q:'Can you explain the difference between an array and a linked list?', cat:'Technical', diff:'beginner' },
-    { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
-    { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
-    { q:'What is the difference between frontend and backend development?', cat:'Technical', diff:'beginner' },
-    { q:'Tell me about a time you had to learn a new technology quickly. How did you handle it?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you ensure your code is readable by others?', cat:'Communication', diff:'beginner' },
-    { q:'What do you do when you\'re stuck on a problem for more than an hour?', cat:'Problem Solving', diff:'beginner' },
-    { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
-    { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
-    { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
-    { q:'Describe a time a bug you introduced caused a significant problem. How did you resolve it?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you approach code reviews — both when reviewing others\' code and receiving feedback?', cat:'Communication', diff:'intermediate' },
-    { q:'Explain the concept of time complexity. Give an example where choosing the wrong algorithm caused performance issues.', cat:'Technical', diff:'intermediate' },
-    { q:'Tell me about a time you disagreed with a technical decision on your team. What did you do?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you balance writing tests versus shipping features quickly?', cat:'Problem Solving', diff:'intermediate' },
-    { q:'Describe a situation where you had to refactor a large piece of legacy code. What was your approach?', cat:'Situational', diff:'intermediate' },
-    { q:'How do you stay up to date with new technologies and best practices?', cat:'Communication', diff:'intermediate' },
-    { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
-  ]
-};
-
-// Application state and setup functions
-let selectedRole = '';
-let selectedDiff = 'beginner';
-
-document.addEventListener('DOMContentLoaded', () => {
-    const grid = document.getElementById('rolesGrid');
-    ROLES.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'role-card';
-        div.id = `card-${r.id}`;
-        div.onclick = () => selectRole(r.id);
-        div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
-        grid.appendChild(div);
-    });
-});
-
-function selectRole(id) {
-    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`card-${id}`).classList.add('selected');
-    selectedRole = id;
-    document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
-    checkStartValidity();
-}
-
-function setDiff(btn) {
-    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedDiff = btn.getAttribute('data-diff');
-}
-
-function onCustomInput() { checkStartValidity(); }
-
-function checkStartValidity() {
-    const btn = document.getElementById('startBtn');
-    if (!selectedRole) return btn.disabled = true;
-    if (selectedRole === 'custom') {
-        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
-    } else {
-        btn.disabled = false;
-    }
-}
-
-function goHome() {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('landing').classList.add('active');
-}
+<!-- All UI Setup and App state resides here -->
+<script src="gemini.js"></script>
 <script>
 const ROLES = [
   { id:'swe',       icon:'💻', title:'Software Engineer',    count:'AI-Generated' },
@@ -958,7 +910,6 @@ const ROLES = [
   { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
 ];
 
-// Application state and setup functions
 let selectedRole = '';
 let selectedDiff = 'beginner';
 
@@ -972,6 +923,12 @@ document.addEventListener('DOMContentLoaded', () => {
         div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
         grid.appendChild(div);
     });
+
+    // Auto-load API key from local storage if it exists
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) {
+        document.getElementById('userApiKey').value = savedKey;
+    }
 });
 
 function selectRole(id) {
@@ -1003,6 +960,12 @@ function checkStartValidity() {
 function goHome() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('landing').classList.add('active');
+}
+
+// Local Storage dynamic handlers for API Key
+window.saveApiKey = function() {
+    const key = document.getElementById('userApiKey').value.trim();
+    localStorage.setItem('gemini_api_key', key);
 }
 
 // Copy results feature
@@ -1020,3 +983,5 @@ window.copyResults = function() {
     });
 }
 </script>
+</body>
+</html>
