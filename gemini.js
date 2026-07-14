@@ -1,3 +1,4 @@
+
 // 1. Paste your API key here (ensure no spaces around it)
 const GEMINI_API_KEY = "AQ.Ab8RN6Iste2B6iVUmF3mTLmWVLFEgUN5vGXdU1jkwJyerzyDug"; 
 
