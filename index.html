@@ -945,9 +945,78 @@ function goHome() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('landing').classList.add('active');
 }
+<script>
+const ROLES = [
+  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'AI-Generated' },
+  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'AI-Generated' },
+  { id:'accountant',icon:'📒', title:'Accountant',           count:'AI-Generated' },
+  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'AI-Generated' },
+  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'AI-Generated' },
+  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'AI-Generated' },
+  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'AI-Generated' },
+  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'AI-Generated' },
+  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
+];
+
+// Application state and setup functions
+let selectedRole = '';
+let selectedDiff = 'beginner';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('rolesGrid');
+    ROLES.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'role-card';
+        div.id = `card-${r.id}`;
+        div.onclick = () => selectRole(r.id);
+        div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
+        grid.appendChild(div);
+    });
+});
+
+function selectRole(id) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`card-${id}`).classList.add('selected');
+    selectedRole = id;
+    document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
+    checkStartValidity();
+}
+
+function setDiff(btn) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDiff = btn.getAttribute('data-diff');
+}
+
+function onCustomInput() { checkStartValidity(); }
+
+function checkStartValidity() {
+    const btn = document.getElementById('startBtn');
+    if (!selectedRole) return btn.disabled = true;
+    if (selectedRole === 'custom') {
+        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
+    } else {
+        btn.disabled = false;
+    }
+}
+
+function goHome() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('landing').classList.add('active');
+}
+
+// Copy results feature
+window.copyResults = function() {
+    const roleVal = document.getElementById('resultsRole').innerText;
+    const gradeVal = document.getElementById('resultsGrade').innerText;
+    const verdictVal = document.getElementById('resultsVerdict').innerText;
+    
+    const textToCopy = `I completed an AI Mock Interview!\nRole: ${roleVal}\nGrade: ${gradeVal} (${verdictVal})\nPractice yours on GitHub Pages!`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        alert("Results copied to clipboard! Share it with your friends.");
+    }).catch(err => {
+        console.error("Could not copy text", err);
+    });
+}
 </script>
-
-<script src="gemini.js"></script>
-
-</body>
-</html>
