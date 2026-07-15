@@ -12,7 +12,7 @@ function getApiKey() {
     return localStorage.getItem('gemini_api_key') || "";
 }
 
-// 2. Generate customized questions from the Gemini API
+// 2. Generate customized questions from the Gemini API via Cloudflare Worker Proxy
 async function generateQuestions(role, difficulty) {
     const apiKey = getApiKey();
     if (!apiKey) {
@@ -20,7 +20,8 @@ async function generateQuestions(role, difficulty) {
         return null;
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // Directing request to your private proxy server
+    const url = `https://gemini-proxy.abdullahali20925.workers.dev/v1beta/models/gemini-2.5-flash:generateContent`;
 
     const prompt = `
     You are an elite, world-class executive recruiter and technical interviewer.
@@ -53,7 +54,12 @@ async function generateQuestions(role, difficulty) {
     try {
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                // Passing the API key via custom and standard headers so your Worker can intercept it
+                "Authorization": `Bearer ${apiKey}`,
+                "x-api-key": apiKey
+            },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: { responseMimeType: "application/json" }
@@ -69,7 +75,7 @@ async function generateQuestions(role, difficulty) {
     }
 }
 
-// 3. Core function to analyze user answers
+// 3. Core function to analyze user answers via Cloudflare Worker Proxy
 async function askGemini(question, userAnswer) {
     const apiKey = getApiKey();
     if (!apiKey) {
@@ -77,7 +83,8 @@ async function askGemini(question, userAnswer) {
         return null;
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // Directing request to your private proxy server
+    const url = `https://gemini-proxy.abdullahali20925.workers.dev/v1beta/models/gemini-2.5-flash:generateContent`;
 
     const systemPrompt = `
     You are an expert Interview Coach. Analyze the user's answer to the interview question provided.
@@ -99,7 +106,12 @@ async function askGemini(question, userAnswer) {
     try {
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                // Passing the API key via custom and standard headers so your Worker can intercept it
+                "Authorization": `Bearer ${apiKey}`,
+                "x-api-key": apiKey
+            },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
                 generationConfig: { responseMimeType: "application/json" }
