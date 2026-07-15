@@ -3,7 +3,7 @@
 // AI Interview Coach — Gemini engine
 // ============================================================
 // 1. Put your API key inside the quotation marks below:
-const GEMINI_API_KEY = "AQ.Ab8RN6KWsfGkW3eORQVI2gRQYAii7_BSwCZn7hpcvI4jAcMNuA";
+const GEMINI_API_KEY = "";
 
 // ⚠️ SECURITY NOTE: this key is embedded in client-side JS. If this repo is
 // public on GitHub, anyone can read it straight out of the source. At minimum,
