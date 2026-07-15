@@ -1,22 +1,18 @@
 // Active state of the ongoing session
-let generatedQuestions = [];
+let generatedQuestionsList = []; // Changed name slightly to prevent function conflict
 let currentQuestionIndex = 0;
 let userAnswersData = []; // Stores questions, user answers, and scores
 
-// Helper function to safely read the user's API Key from browser local storage or input field
+// Helper function modified to bypass frontend key requirements since your Cloudflare worker proxies it
 function getApiKey() {
-    const keyInput = document.getElementById('userApiKey');
-    if (keyInput && keyInput.value.trim() !== "") {
-        return keyInput.value.trim();
-    }
-    return localStorage.getItem('gemini_api_key') || "";
+    return "PROXY_MANAGED"; 
 }
 
 // 2. Generate customized questions from the Gemini API via Cloudflare Worker Proxy
 async function generateQuestions(role, difficulty) {
     const apiKey = getApiKey();
     if (!apiKey) {
-        alert("API Key is missing! Please paste your Gemini API Key in the input field first.");
+        alert("API Key is missing!");
         return null;
     }
 
@@ -56,7 +52,6 @@ async function generateQuestions(role, difficulty) {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
-                // Passing the API key via custom and standard headers so your Worker can intercept it
                 "Authorization": `Bearer ${apiKey}`,
                 "x-api-key": apiKey
             },
@@ -108,7 +103,6 @@ async function askGemini(question, userAnswer) {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
-                // Passing the API key via custom and standard headers so your Worker can intercept it
                 "Authorization": `Bearer ${apiKey}`,
                 "x-api-key": apiKey
             },
@@ -131,7 +125,6 @@ async function askGemini(question, userAnswer) {
 window.startInterview = async function() {
     const startBtn = document.getElementById('startBtn');
     
-    // Read selections
     const roleTitle = selectedRole === 'custom' 
         ? document.getElementById('customRoleInput').value.trim() 
         : ROLES.find(r => r.id === selectedRole)?.title;
@@ -141,26 +134,22 @@ window.startInterview = async function() {
     startBtn.innerText = "Generating questions...";
     startBtn.disabled = true;
 
-    // Fetch dynamic questions from Gemini API
     const questions = await generateQuestions(roleTitle, selectedDiff);
     
     if (questions && questions.length === 5) {
-        generatedQuestions = questions;
+        generatedQuestionsList = questions; // Updated array reference
         currentQuestionIndex = 0;
         userAnswersData = [];
         
-        // Setup Header
         document.getElementById('headerRole').innerText = roleTitle;
         document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
         
-        // Switch screens cleanly
         document.getElementById('landing').classList.remove('active');
         document.getElementById('interview').classList.add('active');
         
-        // Load first question
         loadQuestion(0);
     } else {
-        alert("Oops! Could not generate questions. Please check your network connection and API Key.");
+        alert("Oops! Could not generate questions. Please check your network connection.");
     }
     
     startBtn.innerText = "Begin interview →";
@@ -169,7 +158,7 @@ window.startInterview = async function() {
 
 // Helper function to render active question
 function loadQuestion(index) {
-    const qData = generatedQuestions[index];
+    const qData = generatedQuestionsList[index]; // Updated array reference
     
     document.getElementById('progressFill').style.width = `${(index / 5) * 100}%`;
     document.getElementById('progressText').innerText = `Question ${index + 1} of 5`;
@@ -177,7 +166,6 @@ function loadQuestion(index) {
     document.getElementById('qCategory').innerText = qData.cat;
     document.getElementById('qText').innerText = qData.q;
     
-    // Clear old answer box data
     document.getElementById('answerBox').value = "";
     document.getElementById('answerBox').disabled = false;
     document.getElementById('wordCount').innerText = "0";
@@ -186,7 +174,6 @@ function loadQuestion(index) {
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('feedbackPanel').classList.remove('visible');
     
-    // Configure button states
     document.getElementById('submitBtn').style.display = "block";
     document.getElementById('nextQBtn').innerText = index === 4 ? "Finish & View Results →" : "Next question →";
 }
@@ -218,10 +205,9 @@ window.submitAnswer = async function() {
     if (feedback) {
         const score = feedback.score || 0;
         
-        // Save history for final breakdown
         userAnswersData.push({
             question: question,
-            category: generatedQuestions[currentQuestionIndex].cat,
+            category: generatedQuestionsList[currentQuestionIndex].cat, // Updated array reference
             answer: answer,
             score: score,
             feedback: feedback
@@ -245,10 +231,9 @@ window.submitAnswer = async function() {
         document.getElementById('meterBar').style.width = `${score * 10}%`;
         document.getElementById('meterVal').innerText = `${score * 10}%`;
         
-        // Hide submit button to enforce moving forward
         submitBtn.style.display = "none";
     } else {
-        alert("Unable to process feedback. Check your API key or connection.");
+        alert("Unable to process feedback. Check your proxy server connection.");
         document.getElementById('answerBox').disabled = false;
     }
     
@@ -267,10 +252,9 @@ window.nextQuestion = function() {
 };
 
 window.skipQuestion = function() {
-    // Record average score of 0 for skipped ones
     userAnswersData.push({
-        question: generatedQuestions[currentQuestionIndex].q,
-        category: generatedQuestions[currentQuestionIndex].cat,
+        question: generatedQuestionsList[currentQuestionIndex].q, // Updated array reference
+        category: generatedQuestionsList[currentQuestionIndex].cat, // Updated array reference
         answer: "[Skipped]",
         score: 0,
         feedback: { strengths: "N/A", improvements: "Skipped", suggested: "N/A", example: "N/A" }
@@ -323,7 +307,6 @@ function showFinalResults() {
     document.getElementById('resultsVerdict').innerText = verdict;
     document.getElementById('resultsSubtitle').innerText = subtitle;
 
-    // Render Skills Breakdown List dynamically
     let scoreRowsHTML = "";
     let strongSkillsList = [];
     let weakSkillsList = [];
