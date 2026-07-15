@@ -3,7 +3,7 @@
 // AI Interview Coach — Gemini engine
 // ============================================================
 // 1. Put your API key inside the quotation marks below:
-const GEMINI_API_KEY = "";
+
 
 // ⚠️ SECURITY NOTE: this key is embedded in client-side JS. If this repo is
 // public on GitHub, anyone can read it straight out of the source. At minimum,
@@ -18,18 +18,17 @@ const MODEL = "gemini-flash-latest";
 // x-goog-api-key HEADER, not the old ?key=... query string, or you'll get a
 // 401 ACCESS_TOKEN_TYPE_UNSUPPORTED error. This works for both AQ. and the
 // older AIza... keys, so it's safe either way.
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
 
 // ------------------------------------------------------------
 // Low-level helper: call Gemini, force clean JSON back
 // ------------------------------------------------------------
 async function callGemini(systemPrompt, userPrompt, temperature = 0.9) {
-    const response = await fetch(API_URL, {
+    const response = await fetch("/api/gemini", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": GEMINI_API_KEY
-        },
+       headers: {
+  "Content-Type": "application/json"
+},
         body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
             generationConfig: {
