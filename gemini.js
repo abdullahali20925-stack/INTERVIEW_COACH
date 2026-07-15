@@ -12,7 +12,7 @@ const GEMINI_API_KEY = "AQ.Ab8RN6ILKRqcOAsfj9swvtz-m0ZV5fw9YGSR4Prrz8ksOC9X4Q";
 // proxy requests through a small serverless function so the key never ships
 // to the browser at all.
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
 // NOTE: as of mid-2026 Google is moving keys created in AI Studio to the new
 // "Auth key" format (starts with "AQ."). These must be sent via the
 // x-goog-api-key HEADER, not the old ?key=... query string, or you'll get a
