@@ -1,987 +1,369 @@
+// Active state of the ongoing session
+let generatedQuestions = [];
+let currentQuestionIndex = 0;
+let userAnswersData = []; // Stores questions, user answers, and scores
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Interview Coach — Practice Real Interviews</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* ─── RESET & TOKENS ─────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --ink:       #0D1117;
-  --ink2:      #161B22;
-  --ink3:      #1C2433;
-  --ink4:      #21262D;
-  --line:      rgba(255,255,255,0.07);
-  --line2:     rgba(255,255,255,0.12);
-  --blue:      #2F80ED;
-  --blue-lt:   #6EB1F7;
-  --blue-bg:   rgba(47,128,237,0.12);
-  --blue-bdr:  rgba(47,128,237,0.3);
-  --green:     #27AE60;
-  --green-bg:  rgba(39,174,96,0.12);
-  --amber:     #F2994A;
-  --amber-bg:  rgba(242,153,74,0.12);
-  --red:       #EB5757;
-  --red-bg:    rgba(235,87,87,0.12);
-  --purple:    #9B51E0;
-  --purple-bg: rgba(155,81,224,0.12);
-  --t1: #F0F6FC;
-  --t2: #8B949E;
-  --t3: #484F58;
-  --radius:    12px;
-  --radius-lg: 18px;
-  --mono: 'JetBrains Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
-}
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--sans);
-  background: var(--ink);
-  color: var(--t1);
-  font-size: 15px;
-  line-height: 1.6;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ─── SCREENS ─────────────────────────────────────────── */
-.screen { display: none; flex-direction: column; min-height: 100vh; }
-.screen.active { display: flex; }
-
-/* ─── SHARED COMPONENTS ───────────────────────────────── */
-.btn-primary {
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius);
-  padding: 13px 28px;
-  font-family: var(--sans);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s, transform .12s;
-  display: inline-flex; align-items: center; gap: 8px;
-}
-.btn-primary:hover:not(:disabled) { background: #1a6fd4; transform: translateY(-1px); }
-.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-.btn-ghost {
-  background: none;
-  border: 1px solid var(--line2);
-  color: var(--t2);
-  border-radius: var(--radius);
-  padding: 12px 20px;
-  font-family: var(--sans);
-  font-size: 14px;
-  cursor: pointer;
-  transition: border-color .15s, color .15s;
-}
-.btn-ghost:hover { border-color: var(--blue-bdr); color: var(--t1); }
-.chip {
-  display: inline-flex; align-items: center;
-  font-size: 11px; font-weight: 600;
-  letter-spacing: .6px; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 20px;
-}
-.chip-blue   { background: var(--blue-bg);   color: var(--blue-lt); border: 1px solid var(--blue-bdr); }
-.chip-green  { background: var(--green-bg);  color: #6FCF97; border: 1px solid rgba(39,174,96,.3); }
-.chip-amber  { background: var(--amber-bg);  color: #F2C94C; border: 1px solid rgba(242,153,74,.3); }
-.chip-red    { background: var(--red-bg);    color: var(--red); border: 1px solid rgba(235,87,87,.3); }
-.chip-purple { background: var(--purple-bg); color: #BB6BD9; border: 1px solid rgba(155,81,224,.3); }
-.spinner {
-  display: inline-block; width: 18px; height: 18px;
-  border: 2px solid rgba(255,255,255,.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(10px); }
-  to   { opacity:1; transform:none; }
-}
-
-/* ═══════════════════════════════════════════════════════
-   LANDING PAGE
-═══════════════════════════════════════════════════════ */
-#landing { overflow-x: hidden; }
-
-/* Nav */
-.nav {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.25rem 2rem;
-  border-bottom: 1px solid var(--line);
-}
-.nav-logo {
-  font-family: var(--mono);
-  font-size: 15px; font-weight: 500;
-  color: var(--t1);
-  display: flex; align-items: center; gap: 8px;
-}
-.nav-logo-dot {
-  width: 8px; height: 8px;
-  background: var(--blue);
-  border-radius: 50%;
-  animation: pulse 2.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity:1; transform:scale(1); }
-  50%      { opacity:.6; transform:scale(1.3); }
-}
-
-/* Hero */
-.hero {
-  display: flex; flex-direction: column; align-items: center;
-  text-align: center;
-  padding: 5rem 1.5rem 4rem;
-  position: relative;
-}
-.hero::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(47,128,237,0.1) 0%, transparent 70%);
-  pointer-events: none;
-}
-.hero-eyebrow {
-  font-family: var(--mono);
-  font-size: 11px; font-weight: 500;
-  letter-spacing: 2px; text-transform: uppercase;
-  color: var(--blue-lt);
-  margin-bottom: 1.25rem;
-}
-.hero-title {
-  font-size: clamp(32px, 6vw, 58px);
-  font-weight: 600; line-height: 1.15;
-  color: var(--t1);
-  max-width: 680px;
-  margin-bottom: 1.25rem;
-}
-.hero-title em {
-  font-style: normal;
-  background: linear-gradient(135deg, #2F80ED, #6EB1F7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-sub {
-  font-size: 17px; color: var(--t2);
-  max-width: 480px; line-height: 1.7;
-  margin-bottom: 2.5rem;
-}
-.hero-cta-row {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  justify-content: center; margin-bottom: 3rem;
-}
-.hero-badges {
-  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-}
-.hero-badge {
-  font-size: 12px; color: var(--t3);
-  display: flex; align-items: center; gap: 5px;
-}
-.hero-badge::before { content: '✓'; color: var(--green); font-weight: 700; }
-
-/* How it works */
-.how-section {
-  padding: 3rem 1.5rem;
-  border-top: 1px solid var(--line);
-  max-width: 900px; margin: 0 auto; width: 100%;
-}
-.section-label {
-  font-family: var(--mono);
-  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  color: var(--t3); margin-bottom: 2rem; text-align: center;
-}
-.steps-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1px;
-  background: var(--line);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.step {
-  background: var(--ink2);
-  padding: 1.5rem;
-}
-.step-num {
-  font-family: var(--mono);
-  font-size: 11px; font-weight: 500;
-  color: var(--blue);
-  margin-bottom: .75rem;
-}
-.step-icon { font-size: 24px; margin-bottom: .5rem; }
-.step-title { font-size: 14px; font-weight: 600; color: var(--t1); margin-bottom: .25rem; }
-.step-desc { font-size: 13px; color: var(--t2); line-height: 1.5; }
-
-/* Role selector section */
-.role-section {
-  padding: 3rem 1.5rem 4rem;
-  max-width: 900px; margin: 0 auto; width: 100%;
-}
-.role-section-header {
-  text-align: center; margin-bottom: 2rem;
-}
-.role-section-title { font-size: 22px; font-weight: 600; margin-bottom: .5rem; }
-.role-section-sub { font-size: 14px; color: var(--t2); }
-
-/* API Key Box styling */
-.key-container {
-  max-width: 500px;
-  margin: 0 auto 2rem;
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  text-align: left;
-}
-.key-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--blue-lt);
-  display: block;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.key-hint {
-  font-size: 11px;
-  color: var(--t3);
-  margin: 0;
-}
-
-/* Difficulty selector */
-.diff-row {
-  display: flex; gap: 8px; justify-content: center;
-  flex-wrap: wrap; margin-bottom: 2rem;
-}
-.diff-btn {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 7px 18px;
-  font-family: var(--sans);
-  font-size: 13px; font-weight: 500;
-  color: var(--t2);
-  cursor: pointer;
-  transition: all .15s;
-}
-.diff-btn:hover { border-color: var(--line2); color: var(--t1); }
-.diff-btn.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue-lt); }
-
-/* Role cards grid */
-.roles-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
-  margin-bottom: 2rem;
-}
-.role-card {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.25rem 1rem;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .15s, background .15s, transform .12s;
-}
-.role-card:hover { border-color: var(--line2); background: var(--ink3); transform: translateY(-2px); }
-.role-card.selected { border-color: var(--blue); background: var(--blue-bg); }
-.role-card-icon { font-size: 28px; margin-bottom: .5rem; display: block; }
-.role-card-title { font-size: 13px; font-weight: 600; color: var(--t1); margin-bottom: 3px; }
-.role-card-count { font-size: 11px; color: var(--t3); font-family: var(--mono); }
-
-.custom-role-input {
-  width: 100%;
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 13px 16px;
-  color: var(--t1);
-  font-family: var(--sans);
-  font-size: 14px;
-  outline: none;
-  margin-bottom: 1.5rem;
-  transition: border-color .15s;
-}
-.custom-role-input:focus { border-color: var(--blue-bdr); }
-.custom-role-input::placeholder { color: var(--t3); }
-
-.start-row {
-  display: flex; justify-content: center; gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* ═══════════════════════════════════════════════════════
-   INTERVIEW SCREEN
-═══════════════════════════════════════════════════════ */
-#interview { background: var(--ink); }
-
-/* Header */
-.int-header {
-  display: flex; align-items: center;
-  padding: .9rem 1.5rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--ink2);
-  position: sticky; top: 0; z-index: 20;
-  gap: 12px;
-}
-.int-role-pill {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600;
-  color: var(--blue-lt);
-  background: var(--blue-bg);
-  border: 1px solid var(--blue-bdr);
-  border-radius: 20px;
-  padding: 4px 12px;
-  white-space: nowrap;
-}
-.int-diff-pill {
-  font-size: 11px;
-  color: var(--t3);
-  background: var(--ink3);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 3px 10px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  font-family: var(--mono);
-}
-.int-progress-section {
-  flex: 1; display: flex; flex-direction: column; gap: 4px;
-  min-width: 0;
-}
-.int-progress-bar {
-  height: 4px; background: var(--line);
-  border-radius: 4px; overflow: hidden;
-}
-.int-progress-fill {
-  height: 100%; background: var(--blue);
-  border-radius: 4px; transition: width .4s ease;
-}
-.int-progress-text {
-  font-size: 11px; color: var(--t3);
-  font-family: var(--mono);
-}
-.int-quit-btn {
-  font-size: 12px; color: var(--t3);
-  background: none; border: none; cursor: pointer;
-  font-family: var(--sans); padding: 4px 8px;
-  border-radius: 6px; transition: color .15s, background .15s;
-  white-space: nowrap;
-}
-.int-quit-btn:hover { color: var(--t1); background: var(--ink3); }
-
-/* Interview body */
-.int-body {
-  flex: 1;
-  display: flex; flex-direction: column;
-  padding: 2rem 1.5rem;
-  max-width: 720px; margin: 0 auto; width: 100%;
-}
-
-/* Question meta bar */
-.q-meta {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 1rem; flex-wrap: wrap;
-}
-.q-meta-num {
-  font-family: var(--mono);
-  font-size: 11px; font-weight: 500;
-  color: var(--t3);
-}
-
-/* Question card */
-.q-card {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  overflow: hidden;
-}
-.q-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--blue);
-  border-radius: 3px 0 0 3px;
-}
-.q-text {
-  font-family: var(--mono);
-  font-size: 15px; line-height: 1.7;
-  color: var(--t1);
-  min-height: 44px;
-}
-.q-cursor {
-  display: inline-block; width: 2px; height: 1.1em;
-  background: var(--blue); margin-left: 2px;
-  vertical-align: text-bottom;
-  animation: blink 1s infinite;
-}
-@keyframes blink { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
-
-/* Answer meter */
-.meter-wrap {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 1rem;
-}
-.meter-lbl { font-size: 11px; color: var(--t3); white-space: nowrap; font-family: var(--mono); }
-.meter-track {
-  flex: 1; height: 4px; background: var(--line);
-  border-radius: 4px; overflow: hidden;
-}
-.meter-bar {
-  height: 100%; width: 0%;
-  border-radius: 4px;
-  background: var(--blue);
-  transition: width .3s ease, background .3s ease;
-}
-.meter-val { font-size: 11px; font-family: var(--mono); color: var(--t2); min-width: 30px; text-align: right; }
-
-/* Answer textarea */
-.answer-lbl {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: var(--t3); margin-bottom: .5rem;
-}
-.answer-box {
-  width: 100%;
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  color: var(--t1);
-  font-family: var(--sans);
-  font-size: 14px; line-height: 1.75;
-  resize: none; outline: none;
-  min-height: 130px;
-  transition: border-color .15s;
-}
-.answer-box:focus { border-color: var(--blue-bdr); }
-.answer-box::placeholder { color: var(--t3); }
-.answer-box:disabled { opacity: .5; }
-
-.answer-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 5px; margin-bottom: 1rem;
-}
-.word-count { font-size: 11px; color: var(--t3); font-family: var(--mono); }
-.word-hint  { font-size: 11px; color: var(--t3); }
-
-/* Action row */
-.action-row { display: flex; gap: 10px; }
-.submit-btn {
-  flex: 1; background: var(--blue); color: #fff;
-  border: none; border-radius: var(--radius);
-  padding: 13px; font-family: var(--sans);
-  font-size: 14px; font-weight: 600; cursor: pointer;
-  transition: background .15s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.submit-btn:hover:not(:disabled) { background: #1a6fd4; }
-.submit-btn:disabled { opacity: .4; cursor: not-allowed; }
-.skip-btn {
-  background: none; border: 1px solid var(--line);
-  color: var(--t3); border-radius: var(--radius);
-  padding: 13px 18px; font-family: var(--sans);
-  font-size: 13px; cursor: pointer; transition: all .15s;
-}
-.skip-btn:hover { border-color: var(--line2); color: var(--t2); }
-
-/* ─── Feedback panel ─────────────────────────── */
-.feedback-panel {
-  background: var(--ink3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  margin-top: 1.5rem;
-  overflow: hidden;
-  display: none; animation: fadeUp .3s ease;
-}
-.feedback-panel.visible { display: block; }
-
-.fb-top {
-  display: flex; align-items: center; gap: 12px;
-  padding: 1.1rem 1.4rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--ink2);
-  flex-wrap: wrap;
-}
-.fb-score {
-  font-family: var(--mono);
-  font-size: 26px; font-weight: 500;
-  padding: 4px 14px;
-  border-radius: 10px;
-  white-space: nowrap;
-}
-.fb-score.hi  { background: var(--green-bg);  color: #6FCF97; }
-.fb-score.mid { background: var(--amber-bg);  color: #F2C94C; }
-.fb-score.lo  { background: var(--red-bg);   color: var(--red); }
-
-.fb-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.fb-body { padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
-.fb-block {}
-.fb-block-lbl {
-  font-size: 10px; letter-spacing: 1.5px;
-  text-transform: uppercase; font-weight: 600;
-  margin-bottom: .4rem; font-family: var(--mono);
-}
-.fb-block-lbl.green  { color: var(--green); }
-.fb-block-lbl.amber  { color: var(--amber); }
-.fb-block-lbl.blue   { color: var(--blue-lt); }
-.fb-block-lbl.purple { color: #BB6BD9; }
-.fb-block-text {
-  font-size: 13px; color: var(--t2); line-height: 1.7;
-}
-.fb-example-box {
-  background: var(--ink2);
-  border-left: 3px solid var(--blue);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding: .9rem 1.1rem;
-  font-size: 13px; color: var(--t2);
-  line-height: 1.7; font-style: italic;
-  margin-top: .25rem;
-}
-.next-q-btn {
-  width: 100%; background: none;
-  border: 1px solid var(--blue-bdr);
-  color: var(--blue-lt); border-radius: var(--radius);
-  padding: 12px; font-family: var(--sans);
-  font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: background .15s;
-  margin: 0 1.4rem 1.2rem;
-  width: calc(100% - 2.8rem);
-}
-.next-q-btn:hover { background: var(--blue-bg); }
-
-/* ═══════════════════════════════════════════════════════
-   RESULTS SCREEN
-═══════════════════════════════════════════════════════ */
-#results {
-  padding: 2rem 1.5rem;
-  align-items: center;
-}
-.results-wrap { max-width: 640px; width: 100%; margin: 0 auto; }
-
-.results-top {
-  text-align: center;
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 2.5rem 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative; overflow: hidden;
-}
-.results-top::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(47,128,237,0.08) 0%, transparent 70%);
-  pointer-events: none;
-}
-.results-grade {
-  font-family: var(--mono);
-  font-size: 80px; line-height: 1;
-  font-weight: 500;
-  margin-bottom: .5rem;
-}
-.results-grade.A { color: #6FCF97; }
-.results-grade.B { color: var(--blue-lt); }
-.results-grade.C { color: #F2C94C; }
-.results-grade.D { color: var(--red); }
-.results-role { font-size: 13px; color: var(--t3); font-family: var(--mono); letter-spacing: .5px; margin-bottom: .25rem; }
-.results-verdict { font-size: 20px; font-weight: 600; color: var(--t1); margin-bottom: .4rem; }
-.results-subtitle { font-size: 14px; color: var(--t2); }
-
-.results-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; margin-bottom: 1.5rem;
-}
-.results-card {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.1rem;
-}
-.results-card-lbl {
-  font-size: 10px; letter-spacing: 1.5px;
-  text-transform: uppercase; font-weight: 600;
-  color: var(--t3); margin-bottom: .75rem;
-  font-family: var(--mono);
-}
-.results-skill-list { display: flex; flex-direction: column; gap: 6px; }
-.results-skill {
-  font-size: 13px; color: var(--t2);
-  display: flex; align-items: center; gap: 6px;
-}
-.results-skill::before { content: '→'; color: var(--blue); font-family: var(--mono); font-size: 11px; }
-
-.score-breakdown-list {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.1rem;
-  margin-bottom: 1.5rem;
-}
-.score-breakdown-lbl {
-  font-size: 10px; letter-spacing: 1.5px;
-  text-transform: uppercase; font-weight: 600;
-  color: var(--t3); margin-bottom: 1rem;
-  font-family: var(--mono);
-}
-.srow {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line);
-}
-.srow:last-child { border-bottom: none; }
-.srow-lbl { font-size: 13px; color: var(--t2); flex: 1; }
-.srow-bar { flex: 2; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.srow-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width 1s ease; }
-.srow-val { font-size: 12px; font-weight: 500; color: var(--t1); min-width: 36px; text-align: right; font-family: var(--mono); }
-
-.recs-card {
-  background: var(--ink2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.1rem;
-  margin-bottom: 1.5rem;
-}
-.recs-card-lbl {
-  font-size: 10px; letter-spacing: 1.5px;
-  text-transform: uppercase; font-weight: 600;
-  color: var(--t3); margin-bottom: .75rem;
-  font-family: var(--mono);
-}
-.rec-item {
-  font-size: 13px; color: var(--t2); line-height: 1.6;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--line);
-  display: flex; gap: 10px;
-}
-.rec-item:last-child { border-bottom: none; }
-.rec-num { font-family: var(--mono); font-size: 11px; color: var(--blue); padding-top: 3px; flex-shrink: 0; }
-
-.results-actions { display: flex; flex-direction: column; gap: 10px; }
-.results-actions .btn-primary { justify-content: center; }
-.results-actions .btn-ghost { text-align: center; }
-
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════ */
-@media (max-width: 600px) {
-  .hero { padding: 3.5rem 1rem 2.5rem; }
-  .hero-title { font-size: 28px; }
-  .roles-grid { grid-template-columns: repeat(2, 1fr); }
-  .steps-grid { grid-template-columns: 1fr 1fr; }
-  .int-header { padding: .75rem 1rem; gap: 8px; }
-  .int-body { padding: 1.25rem 1rem; }
-  .results-grid { grid-template-columns: 1fr; }
-  .nav { padding: 1rem; }
-  .diff-btn { font-size: 12px; padding: 6px 14px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-}
-</style>
-</head>
-<body>
-
-<div id="landing" class="screen active">
-  <nav class="nav">
-    <div class="nav-logo">
-      <div class="nav-logo-dot"></div>
-      InterviewCoach.ai
-    </div>
-    <span class="chip chip-green">Free · No signup</span>
-  </nav>
-
-  <div class="hero">
-    <div class="hero-eyebrow">Powered by Gemini AI</div>
-    <h1 class="hero-title">Practice <em>real interviews</em><br>with AI</h1>
-    <p class="hero-sub">Get role-specific interview questions, instant feedback, and improve your confidence before your next interview.</p>
-    <div class="hero-cta-row">
-      <a href="#pick-role" class="btn-primary" style="text-decoration:none;">Start practising →</a>
-    </div>
-    <div class="hero-badges">
-      <span class="hero-badge">8 specialised roles</span>
-      <span class="hero-badge">30+ questions per role</span>
-      <span class="hero-badge">AI feedback on every answer</span>
-      <span class="hero-badge">3 difficulty levels</span>
-    </div>
-  </div>
-
-  <div class="how-section">
-    <div class="section-label">How it works</div>
-    <div class="steps-grid">
-      <div class="step">
-        <div class="step-num">Step 01</div>
-        <div class="step-icon">🎯</div>
-        <div class="step-title">Select your role</div>
-        <div class="step-desc">Choose from 8 specialised roles or enter your own.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">Step 02</div>
-        <div class="step-icon">💬</div>
-        <div class="step-title">Answer questions</div>
-        <div class="step-desc">Five role-specific questions — technical, behavioural, situational.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">Step 03</div>
-        <div class="step-icon">📊</div>
-        <div class="step-title">Get feedback</div>
-        <div class="step-desc">Scored feedback with strengths, gaps, and a model answer tip.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">Step 04</div>
-        <div class="step-icon">🚀</div>
-        <div class="step-title">Improve &amp; repeat</div>
-        <div class="step-desc">Review your summary and practise until you're confident.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="role-section" id="pick-role">
-    <div class="role-section-header">
-      <h2 class="role-section-title">Choose your role &amp; difficulty</h2>
-      <p class="role-section-sub">Questions adapt based on the difficulty you select</p>
-    </div>
-
-    <!-- 🔑 SAFE API KEY INPUT CARD -->
-    <div class="key-container">
-      <label class="key-label" for="userApiKey">🔑 Enter Gemini API Key</label>
-      <input type="password" id="userApiKey" class="custom-role-input" style="margin-bottom: 8px;"
-        placeholder="AIzaSy..." oninput="saveApiKey()" />
-      <p class="key-hint">
-        Your key is stored safely in your browser and is never sent to our code or servers. Only to Google.
-      </p>
-    </div>
-
-    <div class="diff-row">
-      <button class="diff-btn active" data-diff="beginner" onclick="setDiff(this)">🌱 Beginner</button>
-      <button class="diff-btn" data-diff="intermediate" onclick="setDiff(this)">⚡ Intermediate</button>
-      <button class="diff-btn" data-diff="advanced" onclick="setDiff(this)">🔥 Advanced</button>
-    </div>
-
-    <div class="roles-grid" id="rolesGrid"></div>
-
-    <div id="customWrap" style="display:none;">
-      <input type="text" class="custom-role-input" id="customRoleInput"
-        placeholder="Enter your role, e.g. DevOps Engineer, Sales Lead, Project Manager…"
-        oninput="onCustomInput()" />
-    </div>
-
-    <div class="start-row">
-      <button class="btn-primary" id="startBtn" disabled onclick="startInterview()">
-        Begin interview →
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="interview" class="screen">
-  <div class="int-header">
-    <div class="int-role-pill" id="headerRole">–</div>
-    <div class="int-diff-pill" id="headerDiff">–</div>
-    <div class="int-progress-section">
-      <div class="int-progress-bar">
-        <div class="int-progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <div class="int-progress-text" id="progressText">Question 1 of 5</div>
-    </div>
-    <button class="int-quit-btn" onclick="goHome()">✕ Exit</button>
-  </div>
-
-  <div class="int-body">
-    <div class="q-meta">
-      <span class="q-meta-num" id="qNum">Q1</span>
-      <span class="chip chip-blue" id="qCategory">Technical</span>
-    </div>
-
-    <div class="q-card">
-      <div class="q-text" id="qText">—</div>
-    </div>
-
-    <div class="meter-wrap">
-      <span class="meter-lbl">Strength</span>
-      <div class="meter-track"><div class="meter-bar" id="meterBar"></div></div>
-      <span class="meter-val" id="meterVal">—</span>
-    </div>
-
-    <div class="answer-lbl">Your answer</div>
-    <textarea class="answer-box" id="answerBox" rows="5"
-      placeholder="Write your answer here… Aim for 80–200 words. Use specific examples where possible."
-      oninput="onAnswerType()" maxlength="3000"></textarea>
-    <div class="answer-footer">
-      <span class="word-count"><span id="wordCount">0</span> words</span>
-      <span class="word-hint">Aim for 80–200 words</span>
-    </div>
-
-    <div class="action-row">
-      <button class="submit-btn" id="submitBtn" disabled onclick="submitAnswer()">
-        Get feedback
-      </button>
-      <button class="skip-btn" onclick="skipQuestion()">Skip</button>
-    </div>
-
-    <div class="feedback-panel" id="feedbackPanel">
-      <div class="fb-top">
-        <div class="fb-score" id="fbScore">–/10</div>
-        <div class="fb-tags" id="fbTags"></div>
-      </div>
-      <div class="fb-body">
-        <div class="fb-block">
-          <div class="fb-block-lbl green">✓ Strengths</div>
-          <div class="fb-block-text" id="fbStrengths">–</div>
-        </div>
-        <div class="fb-block">
-          <div class="fb-block-lbl amber">⚠ Areas to improve</div>
-          <div class="fb-block-text" id="fbWeaknesses">–</div>
-        </div>
-        <div class="fb-block">
-          <div class="fb-block-lbl blue">💡 Suggested improvement</div>
-          <div class="fb-block-text" id="fbSuggestion">–</div>
-        </div>
-        <div class="fb-block">
-          <div class="fb-block-lbl purple">★ Example of a stronger answer</div>
-          <div class="fb-example-box" id="fbExample">–</div>
-        </div>
-      </div>
-      <button class="next-q-btn" id="nextQBtn" onclick="nextQuestion()">Next question →</button>
-    </div>
-  </div>
-</div>
-
-<div id="results" class="screen">
-  <div class="results-wrap">
-    <div class="results-top">
-      <div class="results-role" id="resultsRole">–</div>
-      <div class="results-grade" id="resultsGrade">–</div>
-      <div class="results-verdict" id="resultsVerdict">–</div>
-      <div class="results-subtitle" id="resultsSubtitle">–</div>
-    </div>
-
-    <div class="results-grid">
-      <div class="results-card">
-        <div class="results-card-lbl">💪 Strongest skills</div>
-        <div class="results-skill-list" id="strongSkills">–</div>
-      </div>
-      <div class="results-card">
-        <div class="results-card-lbl">📈 Skills to develop</div>
-        <div class="results-skill-list" id="weakSkills">–</div>
-      </div>
-    </div>
-
-    <div class="score-breakdown-list">
-      <div class="score-breakdown-lbl">Score breakdown</div>
-      <div id="scoreRows">–</div>
-    </div>
-
-    <div class="recs-card">
-      <div class="recs-card-lbl">🎯 Improvement recommendations</div>
-      <div id="recsList">–</div>
-    </div>
-
-    <div class="results-actions">
-      <button class="btn-primary" onclick="retryInterview()">Practice again →</button>
-      <button class="btn-ghost" onclick="goHome()">← Choose a different role</button>
-      <button class="btn-ghost" onclick="copyResults()">📋 Copy results to share</button>
-    </div>
-  </div>
-</div>
-
-<!-- All UI Setup and App state resides here -->
-<script src="gemini.js"></script>
-<script>
-const ROLES = [
-  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'AI-Generated' },
-  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'AI-Generated' },
-  { id:'accountant',icon:'📒', title:'Accountant',           count:'AI-Generated' },
-  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'AI-Generated' },
-  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'AI-Generated' },
-  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'AI-Generated' },
-  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'AI-Generated' },
-  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'AI-Generated' },
-  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
-];
-
-let selectedRole = '';
-let selectedDiff = 'beginner';
-
-document.addEventListener('DOMContentLoaded', () => {
-    const grid = document.getElementById('rolesGrid');
-    ROLES.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'role-card';
-        div.id = `card-${r.id}`;
-        div.onclick = () => selectRole(r.id);
-        div.innerHTML = `<span class="role-card-icon">${r.icon}</span><div class="role-card-title">${r.title}</div><div class="role-card-count">${r.count}</div>`;
-        grid.appendChild(div);
-    });
-
-    // Auto-load API key from local storage if it exists
-    const savedKey = localStorage.getItem('gemini_api_key');
-    if (savedKey) {
-        document.getElementById('userApiKey').value = savedKey;
+// Helper function to safely read the user's API Key from browser local storage or input field
+function getApiKey() {
+    const keyInput = document.getElementById('userApiKey');
+    if (keyInput && keyInput.value.trim() !== "") {
+        return keyInput.value.trim();
     }
-});
-
-function selectRole(id) {
-    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`card-${id}`).classList.add('selected');
-    selectedRole = id;
-    document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
-    checkStartValidity();
+    return localStorage.getItem('gemini_api_key') || "";
 }
 
-function setDiff(btn) {
-    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedDiff = btn.getAttribute('data-diff');
+// 2. Generate customized questions from the Gemini API via Cloudflare Worker Proxy
+async function generateQuestions(role, difficulty) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert("API Key is missing! Please paste your Gemini API Key in the input field first.");
+        return null;
+    }
+
+    // Directing request to your private proxy server
+    const url = `https://gemini-proxy.abdullahali20925.workers.dev/v1beta/models/gemini-2.5-flash:generateContent`;
+
+    const prompt = `
+    You are an elite, world-class executive recruiter and technical interviewer.
+    Your goal is to generate 5 distinct, highly realistic, and field-appropriate interview questions for the role of "${role}" at a "${difficulty}" level.
+    
+    Draw inspiration from trusted, high-standard sources such as:
+    - Frequently asked industry-standard interview questions.
+    - Top tech/business interview preparation pipelines (e.g., LeetCode, STAR method behavioral frameworks, Glassdoor patterns, McKinsey cases).
+    - Authentic behavioral and situational situations that professionals actually encounter.
+
+    The questions must follow a progressive 5-stage framework:
+    1. Introduction / Icebreaker (Assess communication style, confidence, and passion)
+    2. Technical / Domain Knowledge (Assess core industry skills, frameworks, or principles)
+    3. Behavioral (Assess collaboration, conflict resolution, or dealing with ambiguity using STAR logic)
+    4. Situational / Scenario-based (Hypothetical curveball situations specific to this level and field)
+    5. Critical Thinking / Problem Solving (A highly realistic challenge testing strategic depth)
+
+    Return ONLY a valid JSON array of exactly 5 objects. Do not wrap in markdown blocks, do not write backticks, and do not output extra prose.
+    
+    The JSON array must EXACTLY match this structural template:
+    [
+        {"q": "First Question Text", "cat": "Introduction"},
+        {"q": "Second Question Text", "cat": "Technical"},
+        {"q": "Third Question Text", "cat": "Behavioral"},
+        {"q": "Fourth Question Text", "cat": "Situational"},
+        {"q": "Fifth Question Text", "cat": "Problem Solving"}
+    ]
+    `;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                // Passing the API key via custom and standard headers so your Worker can intercept it
+                "Authorization": `Bearer ${apiKey}`,
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            })
+        });
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        return JSON.parse(rawText);
+    } catch (error) {
+        console.error("Error generating questions:", error);
+        return null;
+    }
 }
 
-function onCustomInput() { checkStartValidity(); }
+// 3. Core function to analyze user answers via Cloudflare Worker Proxy
+async function askGemini(question, userAnswer) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        alert("API Key is missing!");
+        return null;
+    }
 
-function checkStartValidity() {
-    const btn = document.getElementById('startBtn');
-    if (!selectedRole) return btn.disabled = true;
-    if (selectedRole === 'custom') {
-        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
+    // Directing request to your private proxy server
+    const url = `https://gemini-proxy.abdullahali20925.workers.dev/v1beta/models/gemini-2.5-flash:generateContent`;
+
+    const systemPrompt = `
+    You are an expert Interview Coach. Analyze the user's answer to the interview question provided.
+    Provide constructive, authentic, and direct mentoring.
+    You MUST respond ONLY with a clean JSON object. Do not include any markdown formatting, backticks, or text outside the JSON block.
+    
+    The JSON structure must match this EXACTLY:
+    {
+        "score": 8,
+        "strengths": "Provide 1-2 detailed bullet points highlighting what they did well.",
+        "improvements": "Provide 1-2 details on what key information or structure was missing.",
+        "suggested": "Give a quick, actionable tip on how to restructure or improve this specific answer.",
+        "example": "Write a strong, professional example answer based on the user's situation."
+    }
+    `;
+
+    const userPrompt = `Interview Question: "${question}"\nUser's Answer: "${userAnswer}"`;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                // Passing the API key via custom and standard headers so your Worker can intercept it
+                "Authorization": `Bearer ${apiKey}`,
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            })
+        });
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        return JSON.parse(rawText);
+    } catch (error) {
+        console.error("Error communicating with Gemini:", error);
+        return null;
+    }
+}
+
+// 4. Clean start handler with dynamic API calling
+window.startInterview = async function() {
+    const startBtn = document.getElementById('startBtn');
+    
+    // Read selections
+    const roleTitle = selectedRole === 'custom' 
+        ? document.getElementById('customRoleInput').value.trim() 
+        : ROLES.find(r => r.id === selectedRole)?.title;
+        
+    if (!roleTitle) return;
+
+    startBtn.innerText = "Generating questions...";
+    startBtn.disabled = true;
+
+    // Fetch dynamic questions from Gemini API
+    const questions = await generateQuestions(roleTitle, selectedDiff);
+    
+    if (questions && questions.length === 5) {
+        generatedQuestions = questions;
+        currentQuestionIndex = 0;
+        userAnswersData = [];
+        
+        // Setup Header
+        document.getElementById('headerRole').innerText = roleTitle;
+        document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
+        
+        // Switch screens cleanly
+        document.getElementById('landing').classList.remove('active');
+        document.getElementById('interview').classList.add('active');
+        
+        // Load first question
+        loadQuestion(0);
     } else {
-        btn.disabled = false;
+        alert("Oops! Could not generate questions. Please check your network connection and API Key.");
     }
-}
-
-function goHome() {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('landing').classList.add('active');
-}
-
-// Local Storage dynamic handlers for API Key
-window.saveApiKey = function() {
-    const key = document.getElementById('userApiKey').value.trim();
-    localStorage.setItem('gemini_api_key', key);
-}
-
-// Copy results feature
-window.copyResults = function() {
-    const roleVal = document.getElementById('resultsRole').innerText;
-    const gradeVal = document.getElementById('resultsGrade').innerText;
-    const verdictVal = document.getElementById('resultsVerdict').innerText;
     
-    const textToCopy = `I completed an AI Mock Interview!\nRole: ${roleVal}\nGrade: ${gradeVal} (${verdictVal})\nPractice yours on GitHub Pages!`;
+    startBtn.innerText = "Begin interview →";
+    startBtn.disabled = false;
+};
+
+// Helper function to render active question
+function loadQuestion(index) {
+    const qData = generatedQuestions[index];
     
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        alert("Results copied to clipboard! Share it with your friends.");
-    }).catch(err => {
-        console.error("Could not copy text", err);
+    document.getElementById('progressFill').style.width = `${(index / 5) * 100}%`;
+    document.getElementById('progressText').innerText = `Question ${index + 1} of 5`;
+    document.getElementById('qNum').innerText = `Q${index + 1}`;
+    document.getElementById('qCategory').innerText = qData.cat;
+    document.getElementById('qText').innerText = qData.q;
+    
+    // Clear old answer box data
+    document.getElementById('answerBox').value = "";
+    document.getElementById('answerBox').disabled = false;
+    document.getElementById('wordCount').innerText = "0";
+    document.getElementById('meterBar').style.width = "0%";
+    document.getElementById('meterVal').innerText = "—";
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('feedbackPanel').classList.remove('visible');
+    
+    // Configure button states
+    document.getElementById('submitBtn').style.display = "block";
+    document.getElementById('nextQBtn').innerText = index === 4 ? "Finish & View Results →" : "Next question →";
+}
+
+// Handle typing word counts safely
+window.onAnswerType = function() {
+    const box = document.getElementById('answerBox');
+    const text = box.value.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    
+    document.getElementById('wordCount').innerText = words;
+    document.getElementById('submitBtn').disabled = words < 5; 
+};
+
+// Process feedback when clicking "Get Feedback"
+window.submitAnswer = async function() {
+    const submitBtn = document.getElementById('submitBtn');
+    const question = document.getElementById('qText').innerText;
+    const answer = document.getElementById('answerBox').value.trim();
+    
+    if (!answer) return;
+    
+    submitBtn.innerText = "Analyzing answer...";
+    submitBtn.disabled = true;
+    document.getElementById('answerBox').disabled = true;
+    
+    const feedback = await askGemini(question, answer);
+    
+    if (feedback) {
+        const score = feedback.score || 0;
+        
+        // Save history for final breakdown
+        userAnswersData.push({
+            question: question,
+            category: generatedQuestions[currentQuestionIndex].cat,
+            answer: answer,
+            score: score,
+            feedback: feedback
+        });
+
+        const scoreBox = document.getElementById('fbScore');
+        scoreBox.innerText = `${score}/10`;
+        
+        scoreBox.className = "fb-score";
+        if (score >= 8) scoreBox.classList.add('hi');
+        else if (score >= 5) scoreBox.classList.add('mid');
+        else scoreBox.classList.add('lo');
+        
+        document.getElementById('fbStrengths').innerText = feedback.strengths;
+        document.getElementById('fbWeaknesses').innerText = feedback.improvements;
+        document.getElementById('fbSuggestion').innerText = feedback.suggested;
+        document.getElementById('fbExample').innerText = feedback.example;
+        
+        document.getElementById('feedbackPanel').classList.add('visible');
+        
+        document.getElementById('meterBar').style.width = `${score * 10}%`;
+        document.getElementById('meterVal').innerText = `${score * 10}%`;
+        
+        // Hide submit button to enforce moving forward
+        submitBtn.style.display = "none";
+    } else {
+        alert("Unable to process feedback. Check your API key or connection.");
+        document.getElementById('answerBox').disabled = false;
+    }
+    
+    submitBtn.innerText = "Get feedback";
+    submitBtn.disabled = false;
+};
+
+// Next Question flow controller
+window.nextQuestion = function() {
+    if (currentQuestionIndex < 4) {
+        currentQuestionIndex++;
+        loadQuestion(currentQuestionIndex);
+    } else {
+        showFinalResults();
+    }
+};
+
+window.skipQuestion = function() {
+    // Record average score of 0 for skipped ones
+    userAnswersData.push({
+        question: generatedQuestions[currentQuestionIndex].q,
+        category: generatedQuestions[currentQuestionIndex].cat,
+        answer: "[Skipped]",
+        score: 0,
+        feedback: { strengths: "N/A", improvements: "Skipped", suggested: "N/A", example: "N/A" }
     });
+
+    if (currentQuestionIndex < 4) {
+        currentQuestionIndex++;
+        loadQuestion(currentQuestionIndex);
+    } else {
+        showFinalResults();
+    }
+};
+
+// Calculate and generate final screen results dynamically
+function showFinalResults() {
+    document.getElementById('interview').classList.remove('active');
+    document.getElementById('results').classList.add('active');
+
+    const totalScore = userAnswersData.reduce((acc, item) => acc + item.score, 0);
+    const averageScore = Math.round((totalScore / 5) * 10) / 10;
+    
+    let grade = 'D';
+    let verdict = "Needs Practice";
+    let subtitle = "Don't discourage yourself. Prepare some structures and jump back in!";
+    
+    if (averageScore >= 8.5) {
+        grade = 'A';
+        verdict = "Interview Ready!";
+        subtitle = "Excellent work! Your answers are structured and showcase strong industry competencies.";
+    } else if (averageScore >= 7.0) {
+        grade = 'B';
+        verdict = "Strong Performance";
+        subtitle = "Good domain knowledge, with just minor room left for structure and specificity improvement.";
+    } else if (averageScore >= 5.0) {
+        grade = 'C';
+        verdict = "Getting There";
+        subtitle = "Focus on formatting with the STAR method and presenting clearer quantitative results.";
+    }
+
+    const roleTitle = selectedRole === 'custom' 
+        ? document.getElementById('customRoleInput').value.trim() 
+        : ROLES.find(r => r.id === selectedRole)?.title;
+
+    document.getElementById('resultsRole').innerText = `${roleTitle.toUpperCase()} — ${selectedDiff.toUpperCase()}`;
+    
+    const gradeBox = document.getElementById('resultsGrade');
+    gradeBox.innerText = grade;
+    gradeBox.className = `results-grade ${grade}`;
+    
+    document.getElementById('resultsVerdict').innerText = verdict;
+    document.getElementById('resultsSubtitle').innerText = subtitle;
+
+    // Render Skills Breakdown List dynamically
+    let scoreRowsHTML = "";
+    let strongSkillsList = [];
+    let weakSkillsList = [];
+    let recommendationsList = [];
+
+    userAnswersData.forEach((item, index) => {
+        scoreRowsHTML += `
+        <div class="srow">
+            <div class="srow-lbl">${item.category}</div>
+            <div class="srow-bar">
+                <div class="srow-fill" style="width: ${item.score * 10}%; background: ${item.score >= 8 ? 'var(--green)' : item.score >= 5 ? 'var(--amber)' : 'var(--red)'}"></div>
+            </div>
+            <div class="srow-val">${item.score}/10</div>
+        </div>`;
+
+        if (item.score >= 7) {
+            strongSkillsList.push(item.category);
+        } else {
+            weakSkillsList.push(item.category);
+            recommendationsList.push(`Focus on the <strong>${item.category}</strong>: ${item.feedback.suggested || "Make sure to clearly outline your active steps."}`);
+        }
+    });
+
+    document.getElementById('scoreRows').innerHTML = scoreRowsHTML;
+    
+    document.getElementById('strongSkills').innerHTML = strongSkillsList.length 
+        ? strongSkillsList.map(s => `<div class="results-skill">${s}</div>`).join('') 
+        : "<div class='results-skill'>Keep practicing to show structural strength!</div>";
+        
+    document.getElementById('weakSkills').innerHTML = weakSkillsList.length 
+        ? weakSkillsList.map(s => `<div class="results-skill">${s}</div>`).join('') 
+        : "<div class='results-skill'>None! You performed solid across all sections.</div>";
+
+    document.getElementById('recsList').innerHTML = recommendationsList.length 
+        ? recommendationsList.map((rec, idx) => `<div class="rec-item"><span class="rec-num">0${idx+1}</span><div>${rec}</div></div>`).join('') 
+        : "<div class='rec-item'>Fantastic work! Keep reviewing real-world case studies to maintain your edge.</div>";
 }
-</script>
-</body>
-</html>
+
+// Reset functions
+window.retryInterview = function() {
+    document.getElementById('results').classList.remove('active');
+    window.startInterview();
+};
