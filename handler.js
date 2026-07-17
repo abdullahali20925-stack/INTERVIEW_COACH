@@ -1,53 +1,69 @@
-export default async function handler(req, res) {
-  // Allow requests from your website
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+// Connects directly to your new secure Cloudflare Worker proxy
+const PROXY_URL = "https://inrerviewcoach.abdullahali20925.workers.dev";
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+// Wait for the HTML page to fully load before listening for button clicks
+document.addEventListener("DOMContentLoaded", () => {
+    const generateBtn = document.getElementById("generate-btn"); // Make sure your button has id="generate-btn"
+    const outputContainer = document.getElementById("output-container"); // Make sure your output box has id="output-container"
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+    if (!generateBtn) {
+        console.error("Error: Could not find a button with id='generate-btn' in your HTML.");
+        return;
+    }
 
-  try {
-    // 1. Change the URL to target Groq's official API
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // 2. Expect a GROQ_API_KEY environment variable instead of Gemini
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-          // 3. Use one of Groq's flagship fast models
-          model: "llama-3.1-70b-versatile",
-          // 4. Adapt the layout format to fit Groq's standard Chat JSON structure
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert AI Interview Coach. Your goal is to analyze famous real-world interviews from top companies across various career fields. Generate highly specialized technical, behavioral, or situational questions based on that analysis to thoroughly prepare candidates."
-            },
-            {
-              role: "user",
-              content: JSON.stringify(req.body)
+    generateBtn.addEventListener("click", async () => {
+        // 1. Collect user inputs from your HTML form fields
+        const careerField = document.getElementById("career-field")?.value || "General";
+        const experienceLevel = document.getElementById("experience-level")?.value || "Entry Level";
+        const companyType = document.getElementById("company-type")?.value || "Standard";
+
+        // Update UI to show it is loading
+        generateBtn.disabled = true;
+        generateBtn.innerText = "Generating Questions...";
+        if (outputContainer) outputContainer.innerHTML = "<p>Loading your AI interview questions...</p>";
+
+        try {
+            // 2. Send the user choices safely to your Cloudflare Worker
+            const response = await fetch(PROXY_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    field: careerField,
+                    experience: experienceLevel,
+                    company: companyType
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with error status: ${response.status}`);
             }
-          ],
-          temperature: 0.7
-        })
-      }
-    );
 
-    const data = await response.json();
-    return res.status(response.status).json(data);
+            const data = await response.json();
 
-  } catch (err) {
-    return res.status(500).json({
-      error: err.message
+            // 3. Extract Groq's text response content safely
+            const aiTextResponse = data.choices[0].message.content;
+
+            // 4. Display the results nicely inside your HTML output container
+            if (outputContainer) {
+                // If the response text contains markdown-style line breaks, clean them up for HTML display
+                outputContainer.innerHTML = `
+                    <div class="ai-response">
+                        ${aiTextResponse.replace(/\n/g, "<br>")}
+                    </div>
+                `;
+            }
+
+        } catch (error) {
+            console.error("Error generating questions:", error);
+            if (outputContainer) {
+                outputContainer.innerHTML = `<p style="color: red;">Failed to generate questions. Error: ${error.message}</p>`;
+            }
+        } finally {
+            // Reset button state
+            generateBtn.disabled = false;
+            generateBtn.innerText = "Generate Questions";
+        }
     });
-  }
-}
+});
