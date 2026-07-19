@@ -1,86 +1,136 @@
-I need you to debug my project instead of rewriting it. 
-
-### Core Context & Problem
-* **The Issue:** Clicking the "Begin Interview" button on the live site does absolutely nothing.
-* **The Root Cause:** My external file (`gemini.js`) contains a duplicate function `window.startInterview = async function() { ... }` that completely overwrites the native `startInterview()` declared in my `index.html`. 
-* **The Conflict:** This broken external script is designed for a completely foreign layout—it looks for obsolete DOM IDs like `job-field`, `exp-level`, and `company-type` which do not exist in my actual HTML, causing immediate runtime script execution crashes. 
-* **The Typo:** In both files, the proxy variable contains a spelling mistake: `"https://inrerviewcoach.abdullahali20925.workers.dev"` (using an extra 'r' instead of a 't' in "interviewcoach").
-
----
-
-### What I Want You to Do (Strict Constraints)
-1. **Read BOTH provided file contents entirely before suggesting modifications.**
-2. **Do NOT redesign the user interface.**
-3. **Do NOT rewrite or alter my existing UI configuration frameworks.**
-4. **Preserve every feature** (including the built-in dropdown event triggers, screen managers, arrays, and step-rendering calculations).
-5. **Fix the function collision properly:** Remove the destructive `window.startInterview` block from the script completely. Let the native `startInterview()` in `index.html` handle all the screen changes, role detection, and shuffling algorithms.
-6. **Isolate the API Layer:** Repurpose the external script strictly to act as an asynchronous network runner that connects with the Cloudflare Worker proxy.
-7. **Ensure the final configuration is fully operational on GitHub Pages.**
-
----
-
-### File 1: My Current External JavaScript File (`gemini.js`)
-```javascript
-const PROXY_URL = "[https://inrerviewcoach.abdullahali20925.workers.dev](https://inrerviewcoach.abdullahali20925.workers.dev)";
-
-// This makes the function globally available for your HTML button's onclick attribute
-window.startInterview = async function() {
-    // 1. Hook into your HTML elements (checking common ID variations)
-    const beginBtn = document.getElementById("begin-btn") || document.getElementById("generate-btn") || document.querySelector("button[onclick*='startInterview']");
-    const outputBox = document.getElementById("output-box") || document.getElementById("output-container") || document.getElementById("response-container");
-
-    // 2. Grab inputs from your dropdown select menus or input boxes
-    const jobField = document.getElementById("job-field")?.value || document.getElementById("career-field")?.value || "Software Engineering";
-    const expLevel = document.getElementById("exp-level")?.value || document.getElementById("experience-level")?.value || "Entry Level";
-    const compType = document.getElementById("company-type")?.value || document.getElementById("company")?.value || "Tech Company";
-
-    // Prevent double clicking and show loading status
-    if (beginBtn) {
-        beginBtn.disabled = true;
-        beginBtn.innerText = "Connecting to Coach...";
+export default {
+  async fetch(request, env, ctx) {
+    // Handle CORS preflight routing checks
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400"
+        }
+      });
     }
-    if (outputBox) {
-        outputBox.innerHTML = "<p style='color: #666;'>Analyzing industry interview standards and generating your custom questions...</p>";
+
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Only POST requests accepted." }), {
+        status: 405,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
 
     try {
-        // 3. Talk safely to your Cloudflare Worker proxy
-        const response = await fetch(PROXY_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                field: jobField,
-                experience: expLevel,
-                company: compType
-            })
-        });
+      const payload = await request.json();
+      const { action, role, difficulty, count, question, answer } = payload;
+      
+      let systemPrompt = "";
+      let userPrompt = "";
 
-        if (!response.ok) {
-            throw new Error(`Cloudflare returned status code ${response.status}`);
+      if (action === "generate_interview") {
+        systemPrompt = `You are an elite executive senior recruiter with over 20 years of hiring experience at world-class companies including Google, Microsoft, Amazon, Meta, Apple, Netflix, Tesla, NVIDIA, OpenAI, Stripe, Goldman Sachs, Deloitte, PwC, EY, KPMG, McKinsey, and BCG.
+
+Your objective is to generate completely original, high-quality interview questions modeled after the rigorous corporate standards, structural depth, and intellectual difficulty of these elite firms. Never copy real questions verbatim. Every question must feel authentic, contextual, and dynamic.
+
+Tailor the interview balance specifically for the role of: "${role}".
+Consider:
+- Core skills, modern techniques, responsibilities, and industry standards.
+- Software Engineers need deep dives into: Data Structures, Algorithms, Scale, System Design, Architecture, and APIs.
+- Data Analysts need: SQL, Analytics, Python, Statistics, Dashboard insights.
+- PMs need: Leadership, Risk, Stakeholder alignment, Agile.
+- If a custom role is provided, infer the required modern core skills before writing questions.
+
+Difficulty Tier Strategy:
+- beginner: Targeted for students/graduates. Emphasize potential, baseline theory, structural drive, and foundational core knowledge.
+- intermediate: Targeted for 2-5 years experience. Emphasize optimization, handling complexity, tracking cross-functional errors, and metrics.
+- advanced: Targeted for seniors/leaders. Emphasize enterprise strategy, systemic risk mitigation, scalable choices, architecture, and team evolution blocks.
+
+Generate exactly ${count || 5} questions. Choose a diverse breakdown across categories: Introduction, Behavioral, Situational, Technical, Scenario-Based, Problem Solving, Decision Making, Communication, Leadership, or Role-Specific Knowledge. Ensure each question has a distinct scenario or wording.
+
+CRITICAL: Return ONLY a valid, parseable JSON object with no markdown styling wrappers, no formatting codeblocks (\`\`\`json), no preamble text, and no closing narrative explanations.
+
+Expected JSON schema layout structure:
+{
+  "questions": [
+    {
+      "category": "Technical",
+      "difficulty": "${difficulty}",
+      "question": "The specific question text goes here..."
+    }
+  ]
+}`;
+
+        userPrompt = `Generate a fresh, unique ${difficulty} level interview containing ${count || 5} questions for a "${role}" position following the requested strict JSON format framework.`;
+
+      } else if (action === "evaluate_answer") {
+        systemPrompt = `You are a critical, senior executive talent acquisition partner evaluating a candidate's live interview answer.
+Assess the performance accurately based on the candidate's core role competency metrics, Technical Accuracy, Communication, Confidence, Critical Thinking, Strategy, and usage of the STAR Method (Situation, Task, Action, Result). 
+
+Provide a realistic, professional score from 1 to 10.
+If the response is weak or incomplete, structure your response to ask a realistic follow-up question or clarification inside the 'suggestions' space to make it feel natural and conversational.
+
+CRITICAL: Return ONLY a valid, parseable JSON object with no markdown styling wrappers, no formatting codeblocks (\`\`\`json), no preamble text, and no closing narrative explanations.
+
+Expected JSON schema layout structure:
+{
+  "score": 8,
+  "strengths": "Granular breakdown highlighting what exactly went well with their specific reasoning.",
+  "weaknesses": "Explicit tactical identification of execution or structural flaws, metrics missing, or logical leaps.",
+  "suggestions": "Actionable, concrete strategic instructions to improve structure or fill knowledge gaps.",
+  "modelAnswer": "An elegant phrasing template illustrating how an elite candidate would frame this specific answer response using metrics.",
+  "tags": ["Communication", "Technical Accuracy"]
+}`;
+
+        userPrompt = `Role: ${role}
+Difficulty Level: ${difficulty}
+Question Asked: "${question}"
+Candidate Answer: "${answer}"
+
+Provide your professional scored feedback following the requested strict JSON format layout framework.`;
+      } else {
+        throw new Error("Invalid runtime action router token.");
+      }
+
+      // Route parameters to the Groq Chat Completions endpoint
+      const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192", // Optimized speed-to-accuracy model choice
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.76, // Adds healthy variance across generation loops
+          response_format: { type: "json_object" } // Enforces strict JSON handling
+        })
+      });
+
+      if (!groqResponse.ok) {
+        const internalErr = await groqResponse.text();
+        throw new Error(`Groq operational API connection failure: ${internalErr}`);
+      }
+
+      const groqData = await groqResponse.json();
+      let rawTextContent = groqData.choices[0].message.content.trim();
+
+      // Sanitation layer clearing accidental backtick blocks
+      rawTextContent = rawTextContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+
+      return new Response(rawTextContent, {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
         }
-
-        const result = await response.json();
-
-        // 4. Extract the Groq text content out of the response payload
-        const rawText = result.choices[0].message.content;
-
-        // 5. Display the questions cleanly on your page
-        if (outputBox) {
-            outputBox.innerHTML = `<div class="interview-questions" style="line-height: 1.6; color: #333;">${rawText.replace(/\n/g, "<br>")}</div>`;
-        }
+      });
 
     } catch (error) {
-        console.error("Interview generation error:", error);
-        if (outputBox) {
-            outputBox.innerHTML = `<p style="auto; color: #ff4d4d;">Could not load questions. Error details: ${error.message}</p>`;
-        }
-    } finally {
-        // Re-enable the button button
-        if (beginBtn) {
-            beginBtn.disabled = false;
-            beginBtn.innerText = "Begin Interview";
-        }
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
-}
+  }
+};
