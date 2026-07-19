@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Interview Coach — Practice Real Interviews</title>
-<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link href="[https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap](https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap)" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ─── RESET & TOKENS ─────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -681,8 +681,8 @@ body {
       <a href="#pick-role" class="btn-primary" style="text-decoration:none;">Start practising →</a>
     </div>
     <div class="hero-badges">
-      <span class="hero-badge">8 specialised roles</span>
-      <span class="hero-badge">30+ questions per role</span>
+      <span class="hero-badge">Dynamic AI Generation</span>
+      <span class="hero-badge">Custom Tailored Roles</span>
       <span class="hero-badge">AI feedback on every answer</span>
       <span class="hero-badge">3 difficulty levels</span>
     </div>
@@ -695,13 +695,13 @@ body {
         <div class="step-num">Step 01</div>
         <div class="step-icon">🎯</div>
         <div class="step-title">Select your role</div>
-        <div class="step-desc">Choose from 8 specialised roles or enter your own.</div>
+        <div class="step-desc">Choose from our targeted roles or type in your own custom career pathway.</div>
       </div>
       <div class="step">
         <div class="step-num">Step 02</div>
         <div class="step-icon">💬</div>
         <div class="step-title">Answer questions</div>
-        <div class="step-desc">Five role-specific questions — technical, behavioural, situational.</div>
+        <div class="step-desc">Five completely dynamic questions modeled after top tier corporate standards.</div>
       </div>
       <div class="step">
         <div class="step-num">Step 03</div>
@@ -859,40 +859,20 @@ body {
 
 <script>
 const ROLES = [
-  { id:'swe',        icon:'💻', title:'Software Engineer',    count:'32 questions' },
-  { id:'teacher',    icon:'🏫', title:'Teacher',              count:'30 questions' },
-  { id:'accountant', icon:'📒', title:'Accountant',           count:'30 questions' },
-  { id:'nurse',      icon:'🩺', title:'Nurse',                count:'30 questions' },
-  { id:'sales',      icon:'🤝', title:'Sales Representative', count:'30 questions' },
-  { id:'marketing',  icon:'📣', title:'Marketing Manager',    count:'31 questions' },
-  { id:'hr',         icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
-  { id:'analyst',    icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'swe',        icon:'💻', title:'Software Engineer',    count:'AI Generated' },
+  { id:'teacher',    icon:'🏫', title:'Teacher',              count:'AI Generated' },
+  { id:'accountant', icon:'📒', title:'Accountant',           count:'AI Generated' },
+  { id:'nurse',      icon:'🩺', title:'Nurse',                count:'AI Generated' },
+  { id:'sales',      icon:'🤝', title:'Sales Representative', count:'AI Generated' },
+  { id:'marketing',  icon:'📣', title:'Marketing Manager',    count:'AI Generated' },
+  { id:'hr',         icon:'🧑‍💼', title:'HR Manager',           count:'AI Generated' },
+  { id:'analyst',    icon:'📊', title:'Data Analyst',         count:'AI Generated' },
+  { id:'doctor',     icon:'🩺', title:'Doctor',               count:'AI Generated' },
+  { id:'pm',         icon:'📋', title:'Project Manager',      count:'AI Generated' },
   { id:'custom',     icon:'✏️', title:'Other role',            count:'Custom' },
 ];
 
-const QB = {
-  swe: [
-    { q:'Tell me about yourself and your programming background.', cat:'Introduction', diff:'beginner' },
-    { q:'What programming languages are you most comfortable with and why?', cat:'Technical', diff:'beginner' },
-    { q:'Can you explain the difference between an array and a linked list?', cat:'Technical', diff:'beginner' },
-    { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
-    { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
-    { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
-    { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
-    { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
-    { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
-  ],
-  generic: [
-    { q:'Tell me about yourself and why you are interested in this position.', cat:'Introduction', diff:'beginner' },
-    { q:'What do you consider to be your greatest professional strength?', cat:'Behavioral', diff:'beginner' },
-    { q:'Describe a time you faced a difficult challenge at work or school. How did you handle it?', cat:'Problem Solving', diff:'intermediate' },
-    { q:'How do you manage your time and prioritise tasks when handling multiple projects?', cat:'Situational', diff:'intermediate' },
-    { q:'Where do you see your industry heading in the next five years, and how are you preparing?', cat:'Strategic', diff:'advanced' }
-  ]
-};
-
-const PROXY_URL = "[https://inrerviewcoach.abdullahali20925.workers.dev](https://inrerviewcoach.abdullahali20925.workers.dev)";
+const PROXY_URL = "https://interviewcoach.abdullahali20925.workers.dev";
 
 let selectedRole = '';
 let selectedDiff = 'beginner';
@@ -957,7 +937,7 @@ function goHome() {
     switchScreen('landing');
 }
 
-function startInterview() {
+async function startInterview() {
     let roleTitle = "";
     if (selectedRole === 'custom') {
         roleTitle = document.getElementById('customRoleInput').value.trim();
@@ -965,33 +945,55 @@ function startInterview() {
         roleTitle = ROLES.find(r => r.id === selectedRole)?.title || "Professional";
     }
 
-    const rawBank = QB[selectedRole] || QB['generic'];
-    const filtered = rawBank.filter(q => q.diff === selectedDiff);
-    const fallbackPool = filtered.length > 0 ? filtered : rawBank;
-    
-    currentQuestions = [...fallbackPool].sort(() => 0.5 - Math.random()).slice(0, 5);
-    
-    while(currentQuestions.length < 5) {
-        currentQuestions.push(QB['generic'][currentQuestions.length % QB['generic'].length]);
+    const startBtn = document.getElementById('startBtn');
+    startBtn.disabled = true;
+    startBtn.innerText = "Generating Interview...";
+
+    try {
+        const response = await fetch(PROXY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "generate_interview",
+                role: roleTitle,
+                difficulty: selectedDiff,
+                count: 5
+            })
+        });
+
+        if (!response.ok) throw new Error("Could not parse AI response cluster.");
+        const data = await response.json();
+        
+        if (!data.questions || data.questions.length === 0) {
+            throw new Error("Invalid question configuration array formatting payload.");
+        }
+
+        currentQuestions = data.questions;
+        currentQuestionIndex = 0;
+        interviewScores = [];
+        savedFeedbacks = [];
+
+        document.getElementById('headerRole').innerText = roleTitle;
+        document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
+
+        switchScreen('interview');
+        loadQuestion();
+
+    } catch (err) {
+        console.error("Initialization runner failure configuration:", err);
+        alert("Failed to initialize dynamic live AI interview session. Please verify connection credentials.");
+    } finally {
+        startBtn.disabled = false;
+        startBtn.innerText = "Begin interview →";
     }
-
-    currentQuestionIndex = 0;
-    interviewScores = [];
-    savedFeedbacks = [];
-
-    document.getElementById('headerRole').innerText = roleTitle;
-    document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
-
-    switchScreen('interview');
-    loadQuestion();
 }
 
 function loadQuestion() {
     const qData = currentQuestions[currentQuestionIndex];
     
     document.getElementById('qNum').innerText = `Q${currentQuestionIndex + 1}`;
-    document.getElementById('qCategory').innerText = qData.cat || "Interview Question";
-    document.getElementById('qText').innerText = qData.q;
+    document.getElementById('qCategory').innerText = qData.category || "Core Competency";
+    document.getElementById('qText').innerText = qData.question;
     
     document.getElementById('answerBox').value = "";
     document.getElementById('wordCount').innerText = "0";
@@ -1011,60 +1013,45 @@ function onAnswerType() {
     const text = document.getElementById('answerBox').value.trim();
     const words = text === "" ? 0 : text.split(/\s+/).length;
     document.getElementById('wordCount').innerText = words;
-    document.getElementById('submitBtn').disabled = text.length < 10;
+    document.getElementById('submitBtn').disabled = text.length < 5;
 }
 
 async function submitAnswer() {
     const answerText = document.getElementById('answerBox').value.trim();
-    const currentQ = currentQuestions[currentQuestionIndex].q;
+    const currentQ = currentQuestions[currentQuestionIndex].question;
     const roleTitle = document.getElementById('headerRole').innerText;
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span class="spinner"></span> Processing...`;
 
-    const promptMessage = `You are a professional HR Director interviewing a candidate for a ${roleTitle} position.
-Evaluate the candidate's answer to this question: "${currentQ}"
-Candidate's Answer: "${answerText}"
-
-Provide your feedback in an exact, strict JSON structure format with no markdown wrappers and no conversation text around it. The structure must look exactly like this object:
-{
-  "score": 8,
-  "tags": ["Structured", "Clear Communication"],
-  "strengths": "Provide specific details on what went well.",
-  "gaps": "Detail what was missing or could be expanded.",
-  "suggestion": "Concrete actionable item for improvements.",
-  "modelTip": "A small template structure or phrasing they should use."
-}`;
-
     try {
         const response = await fetch(PROXY_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                messages: [{ role: "user", content: promptMessage }]
+                action: "evaluate_answer",
+                role: roleTitle,
+                difficulty: selectedDiff,
+                question: currentQ,
+                answer: answerText
             })
         });
 
-        if (!response.ok) throw new Error("Worker responded with an invalid server status.");
-        
-        const data = await response.json();
-        const rawContent = data.choices[0].message.content.trim();
-        
-        const cleanJsonString = rawContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
-        const parsed = JSON.parse(cleanJsonString);
+        if (!response.ok) throw new Error("Evaluation pipeline failed parsing status runner.");
+        const parsed = await response.json();
 
         renderFeedback(parsed);
         
     } catch (err) {
         console.error("Evaluation pipeline failed:", err);
         renderFeedback({
-            score: Math.floor(Math.random() * 3) + 6,
+            score: 7,
             tags: ["Completed"],
-            strengths: "Your answer shows basic competency and answers the primary prompt directly.",
-            gaps: "Could use more metrics, specific project scopes, or structural frameworks like the STAR method.",
-            suggestion: "Add measurable key performance metrics to confirm context and output depth.",
-            modelTip: "Try starting with: 'In my previous project, we encountered a challenge where [X] happened, resulting in [Y] outcome...'"
+            strengths: "Your answer shows baseline domain competency and answers the question details.",
+            gaps: "Could use more specific project structural matrices like the STAR framework design layout metrics.",
+            suggestion: "Add measurable data output metrics directly inside the contextual layout.",
+            modelTip: "Try utilizing structural phrasings such as: 'In my past deployment pipeline configuration setup, we encountered...'"
         });
     } finally {
         submitBtn.innerHTML = "Get feedback";
@@ -1091,10 +1078,10 @@ function renderFeedback(fb) {
         });
     }
 
-    document.getElementById('fbStrengths').innerText = fb.strengths || "Good focus and clarity.";
-    document.getElementById('fbWeaknesses').innerText = fb.gaps || "Add explicit metrics or detail work environments.";
-    document.getElementById('fbSuggestion').innerText = fb.suggestion || "Structure using the STAR pattern framework.";
-    document.getElementById('fbExample').innerText = fb.modelTip || "No explicit template specified.";
+    document.getElementById('fbStrengths').innerText = fb.strengths || "Good clear structural communication flow.";
+    document.getElementById('fbWeaknesses').innerText = fb.weaknesses || "Missing granular details or data tracking visibility parameters.";
+    document.getElementById('fbSuggestion').innerText = fb.suggestions || "Inject quantitative results to validate behavioral loops.";
+    document.getElementById('fbExample').innerText = fb.modelAnswer || "No template framework specified by engine layers.";
 
     document.getElementById('feedbackPanel').classList.add('visible');
     
@@ -1109,7 +1096,7 @@ function renderFeedback(fb) {
 
 function skipQuestion() {
     interviewScores.push(0);
-    savedFeedbacks.push({ score: 0, strengths: "Question skipped.", gaps: "N/A", suggestion: "N/A", modelTip: "N/A" });
+    savedFeedbacks.push({ score: 0, strengths: "Question skipped.", weaknesses: "N/A", suggestions: "N/A", modelAnswer: "N/A" });
     nextQuestion();
 }
 
@@ -1159,14 +1146,14 @@ function renderResultsDashboard() {
         const scr = interviewScores[idx];
         const fbObj = savedFeedbacks[idx];
         
-        if (fbObj.suggestion && scr < 8) weaknessesPool.push(fbObj.suggestion);
+        if (fbObj.suggestions && scr < 8) weaknessesPool.push(fbObj.suggestions);
         if (fbObj.strengths && scr >= 7) strengthsPool.push(fbObj.strengths);
-        if (fbObj.modelTip) advicePool.push(fbObj.modelTip);
+        if (fbObj.modelAnswer) advicePool.push(fbObj.modelAnswer);
 
         const row = document.createElement('div');
         row.className = 'srow';
         row.innerHTML = `
-            <div class="srow-lbl">Q${idx+1}: ${q.cat || 'Core skill'}</div>
+            <div class="srow-lbl">Q${idx+1}: ${q.category || 'Core skill'}</div>
             <div class="srow-bar"><div class="srow-fill" style="width: ${scr*10}%"></div></div>
             <div class="srow-val">${scr}/10</div>
         `;
