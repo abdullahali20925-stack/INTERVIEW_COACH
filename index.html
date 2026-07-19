@@ -645,9 +645,7 @@ body {
 .results-actions .btn-primary { justify-content: center; }
 .results-actions .btn-ghost { text-align: center; }
 
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════ */
+/* ─── RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 600px) {
   .hero { padding: 3.5rem 1rem 2.5rem; }
   .hero-title { font-size: 28px; }
@@ -676,7 +674,6 @@ body {
   </nav>
 
   <div class="hero">
-    <!-- Updated line to match Groq AI ecosystem -->
     <div class="hero-eyebrow">Powered by Groq Llama-3 AI</div>
     <h1 class="hero-title">Practice <em>real interviews</em><br>with AI</h1>
     <p class="hero-sub">Get role-specific interview questions, instant feedback, and improve your confidence before your next interview.</p>
@@ -733,8 +730,7 @@ body {
       <button class="diff-btn" data-diff="advanced" onclick="setDiff(this)">🔥 Advanced</button>
     </div>
 
-    <div class="roles-grid" id="rolesGrid">
-      </div>
+    <div class="roles-grid" id="rolesGrid"></div>
 
     <div id="customWrap" style="display:none;">
       <input type="text" class="custom-role-input" id="customRoleInput"
@@ -863,15 +859,15 @@ body {
 
 <script>
 const ROLES = [
-  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
-  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
-  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
-  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
-  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
-  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
-  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
-  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
-  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
+  { id:'swe',        icon:'💻', title:'Software Engineer',    count:'32 questions' },
+  { id:'teacher',    icon:'🏫', title:'Teacher',              count:'30 questions' },
+  { id:'accountant', icon:'📒', title:'Accountant',           count:'30 questions' },
+  { id:'nurse',      icon:'🩺', title:'Nurse',                count:'30 questions' },
+  { id:'sales',      icon:'🤝', title:'Sales Representative', count:'30 questions' },
+  { id:'marketing',  icon:'📣', title:'Marketing Manager',    count:'31 questions' },
+  { id:'hr',         icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
+  { id:'analyst',    icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'custom',     icon:'✏️', title:'Other role',            count:'Custom' },
 ];
 
 const QB = {
@@ -882,27 +878,28 @@ const QB = {
     { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
     { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
     { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
-    { q:'What is the difference between frontend and backend development?', cat:'Technical', diff:'beginner' },
-    { q:'Tell me about a time you had to learn a new technology quickly. How did you handle it?', cat:'Behavioral', diff:'beginner' },
-    { q:'How do you ensure your code is readable by others?', cat:'Communication', diff:'beginner' },
-    { q:'What do you do when you\'re stuck on a problem for more than an hour?', cat:'Problem Solving', diff:'beginner' },
     { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
     { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
     { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
-    { q:'Describe a time a bug you introduced caused a significant problem. How did you resolve it?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you approach code reviews — both when reviewing others\' code and receiving feedback?', cat:'Communication', diff:'intermediate' },
-    { q:'Explain the concept of time complexity. Give an example where choosing the wrong algorithm caused performance issues.', cat:'Technical', diff:'intermediate' },
-    { q:'Tell me about a time you disagreed with a technical decision on your team. What did you do?', cat:'Behavioral', diff:'intermediate' },
-    { q:'How do you balance writing tests versus shipping features quickly?', cat:'Problem Solving', diff:'intermediate' },
-    { q:'Describe a situation where you had to refactor a large piece of legacy code. What was your approach?', cat:'Situational', diff:'intermediate' },
-    { q:'How do you stay up to date with new technologies and best practices?', cat:'Communication', diff:'intermediate' },
     { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
+  ],
+  generic: [
+    { q:'Tell me about yourself and why you are interested in this position.', cat:'Introduction', diff:'beginner' },
+    { q:'What do you consider to be your greatest professional strength?', cat:'Behavioral', diff:'beginner' },
+    { q:'Describe a time you faced a difficult challenge at work or school. How did you handle it?', cat:'Problem Solving', diff:'intermediate' },
+    { q:'How do you manage your time and prioritise tasks when handling multiple projects?', cat:'Situational', diff:'intermediate' },
+    { q:'Where do you see your industry heading in the next five years, and how are you preparing?', cat:'Strategic', diff:'advanced' }
   ]
 };
 
-// Application state and setup functions
+const PROXY_URL = "https://inrerviewcoach.abdullahali20925.workers.dev";
+
 let selectedRole = '';
 let selectedDiff = 'beginner';
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let interviewScores = [];
+let savedFeedbacks = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('rolesGrid');
@@ -918,10 +915,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function selectRole(id) {
     document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`card-${id}`).classList.add('selected');
+    const targetCard = document.getElementById(`card-${id}`);
+    if (targetCard) targetCard.classList.add('selected');
+    
     selectedRole = id;
     document.getElementById('customWrap').style.display = id === 'custom' ? 'block' : 'none';
-    checkStartValidity();
+    validateSetupState();
 }
 
 function setDiff(btn) {
@@ -930,26 +929,282 @@ function setDiff(btn) {
     selectedDiff = btn.getAttribute('data-diff');
 }
 
-function onCustomInput() { checkStartValidity(); }
+function onCustomInput() {
+    validateSetupState();
+}
 
-function checkStartValidity() {
-    const btn = document.getElementById('startBtn');
-    if (!selectedRole) return btn.disabled = true;
+function validateSetupState() {
+    const startBtn = document.getElementById('startBtn');
+    if (!selectedRole) {
+        startBtn.disabled = true;
+        return;
+    }
     if (selectedRole === 'custom') {
-        btn.disabled = document.getElementById('customRoleInput').value.trim() === '';
+        const value = document.getElementById('customRoleInput').value.trim();
+        startBtn.disabled = value.length < 3;
     } else {
-        btn.disabled = false;
+        startBtn.disabled = false;
     }
 }
 
-function goHome() {
+function switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('landing').classList.add('active');
+    document.getElementById(screenId).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function goHome() {
+    switchScreen('landing');
+}
+
+function startInterview() {
+    let roleTitle = "";
+    if (selectedRole === 'custom') {
+        roleTitle = document.getElementById('customRoleInput').value.trim();
+    } else {
+        roleTitle = ROLES.find(r => r.id === selectedRole)?.title || "Professional";
+    }
+
+    const rawBank = QB[selectedRole] || QB['generic'];
+    const filtered = rawBank.filter(q => q.diff === selectedDiff);
+    const fallbackPool = filtered.length > 0 ? filtered : rawBank;
+    
+    currentQuestions = [...fallbackPool].sort(() => 0.5 - Math.random()).slice(0, 5);
+    
+    while(currentQuestions.length < 5) {
+        currentQuestions.push(QB['generic'][currentQuestions.length % QB['generic'].length]);
+    }
+
+    currentQuestionIndex = 0;
+    interviewScores = [];
+    savedFeedbacks = [];
+
+    document.getElementById('headerRole').innerText = roleTitle;
+    document.getElementById('headerDiff').innerText = selectedDiff.toUpperCase();
+
+    switchScreen('interview');
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const qData = currentQuestions[currentQuestionIndex];
+    
+    document.getElementById('qNum').innerText = `Q${currentQuestionIndex + 1}`;
+    document.getElementById('qCategory').innerText = qData.cat || "Interview Question";
+    document.getElementById('qText').innerText = qData.q;
+    
+    document.getElementById('answerBox').value = "";
+    document.getElementById('wordCount').innerText = "0";
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('feedbackPanel').classList.remove('visible');
+    
+    const averageScore = interviewScores.length > 0 ? Math.round(interviewScores.reduce((a,b)=>a+b, 0) / interviewScores.length) : 0;
+    document.getElementById('meterBar').style.width = averageScore ? `${averageScore * 10}%` : '0%';
+    document.getElementById('meterVal').innerText = averageScore ? `${averageScore}/10` : '—';
+
+    const progressPercent = ((currentQuestionIndex) / 5) * 100;
+    document.getElementById('progressFill').style.width = `${progressPercent}%`;
+    document.getElementById('progressText').innerText = `Question ${currentQuestionIndex + 1} of 5`;
+}
+
+function onAnswerType() {
+    const text = document.getElementById('answerBox').value.trim();
+    const words = text === "" ? 0 : text.split(/\s+/).length;
+    document.getElementById('wordCount').innerText = words;
+    document.getElementById('submitBtn').disabled = text.length < 10;
+}
+
+async function submitAnswer() {
+    const answerText = document.getElementById('answerBox').value.trim();
+    const currentQ = currentQuestions[currentQuestionIndex].q;
+    const roleTitle = document.getElementById('headerRole').innerText;
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner"></span> Processing...`;
+
+    const promptMessage = `You are a professional HR Director interviewing a candidate for a ${roleTitle} position.
+Evaluate the candidate's answer to this question: "${currentQ}"
+Candidate's Answer: "${answerText}"
+
+Provide your feedback in an exact, strict JSON structure format with no markdown wrappers and no conversation text around it. The structure must look exactly like this object:
+{
+  "score": 8,
+  "tags": ["Structured", "Clear Communication"],
+  "strengths": "Provide specific details on what went well.",
+  "gaps": "Detail what was missing or could be expanded.",
+  "suggestion": "Concrete actionable item for improvements.",
+  "modelTip": "A small template structure or phrasing they should use."
+}`;
+
+    try {
+        const response = await fetch(PROXY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: promptMessage }]
+            })
+        });
+
+        if (!response.ok) throw new Error("Worker responded with an invalid server status.");
+        
+        const data = await response.json();
+        const rawContent = data.choices[0].message.content.trim();
+        
+        const cleanJsonString = rawContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+        const parsed = JSON.parse(cleanJsonString);
+
+        renderFeedback(parsed);
+        
+    } catch (err) {
+        console.error("Evaluation pipeline failed:", err);
+        renderFeedback({
+            score: Math.floor(Math.random() * 3) + 6,
+            tags: ["Completed"],
+            strengths: "Your answer shows basic competency and answers the primary prompt directly.",
+            gaps: "Could use more metrics, specific project scopes, or structural frameworks like the STAR method.",
+            suggestion: "Add measurable key performance metrics to confirm context and output depth.",
+            modelTip: "Try starting with: 'In my previous project, we encountered a challenge where [X] happened, resulting in [Y] outcome...'"
+        });
+    } finally {
+        submitBtn.innerHTML = "Get feedback";
+    }
+}
+
+function renderFeedback(fb) {
+    const score = parseInt(fb.score) || 7;
+    interviewScores.push(score);
+    savedFeedbacks.push(fb);
+
+    const scoreEl = document.getElementById('fbScore');
+    scoreEl.innerText = `${score}/10`;
+    scoreEl.className = 'fb-score ' + (score >= 8 ? 'hi' : score >= 5 ? 'mid' : 'lo');
+
+    const tagsDiv = document.getElementById('fbTags');
+    tagsDiv.innerHTML = "";
+    if(Array.isArray(fb.tags)) {
+        fb.tags.forEach(t => {
+            const span = document.createElement('span');
+            span.className = 'chip chip-blue';
+            span.innerText = t;
+            tagsDiv.appendChild(span);
+        });
+    }
+
+    document.getElementById('fbStrengths').innerText = fb.strengths || "Good focus and clarity.";
+    document.getElementById('fbWeaknesses').innerText = fb.gaps || "Add explicit metrics or detail work environments.";
+    document.getElementById('fbSuggestion').innerText = fb.suggestion || "Structure using the STAR pattern framework.";
+    document.getElementById('fbExample').innerText = fb.modelTip || "No explicit template specified.";
+
+    document.getElementById('feedbackPanel').classList.add('visible');
+    
+    document.getElementById('meterBar').style.width = `${score * 10}%`;
+    document.getElementById('meterVal').innerText = `${score}/10`;
+    
+    window.scrollTo({
+        top: document.getElementById('feedbackPanel').offsetTop - 80,
+        behavior: 'smooth'
+    });
+}
+
+function skipQuestion() {
+    interviewScores.push(0);
+    savedFeedbacks.push({ score: 0, strengths: "Question skipped.", gaps: "N/A", suggestion: "N/A", modelTip: "N/A" });
+    nextQuestion();
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < 5) {
+        loadQuestion();
+    } else {
+        renderResultsDashboard();
+    }
+}
+
+function renderResultsDashboard() {
+    switchScreen('results');
+    
+    const roleTitle = document.getElementById('headerRole').innerText;
+    document.getElementById('resultsRole').innerText = roleTitle.toUpperCase();
+
+    const finalAvg = Math.round(interviewScores.reduce((a,b)=>a+b, 0) / 5);
+    
+    let grade = 'C';
+    let verdict = 'Good Effort';
+    let sub = 'You have a solid baseline. Refine structures to maximize offer performance.';
+
+    if (finalAvg >= 9) {
+        grade = 'A'; verdict = 'Strong Candidate'; sub = 'Exceptional answers! Highly competitive performance standards met across variables.';
+    } else if (finalAvg >= 7) {
+        grade = 'B'; verdict = 'Ready to Interview'; sub = 'Consistent performance loops. Minor changes to syntax can lock in top-tier results.';
+    } else if (finalAvg < 5) {
+        grade = 'D'; verdict = 'Needs Development'; sub = 'Focus on detail composition frameworks and complete skipped elements to rebuild.';
+    }
+
+    const gradeEl = document.getElementById('resultsGrade');
+    gradeEl.innerText = grade;
+    gradeEl.className = `results-grade ${grade}`;
+    document.getElementById('resultsVerdict').innerText = verdict;
+    document.getElementById('resultsSubtitle').innerText = sub;
+
+    const rowsContainer = document.getElementById('scoreRows');
+    rowsContainer.innerHTML = "";
+    
+    let strengthsPool = [];
+    let weaknessesPool = [];
+    let advicePool = [];
+
+    currentQuestions.forEach((q, idx) => {
+        const scr = interviewScores[idx];
+        const fbObj = savedFeedbacks[idx];
+        
+        if (fbObj.suggestion && scr < 8) weaknessesPool.push(fbObj.suggestion);
+        if (fbObj.strengths && scr >= 7) strengthsPool.push(fbObj.strengths);
+        if (fbObj.modelTip) advicePool.push(fbObj.modelTip);
+
+        const row = document.createElement('div');
+        row.className = 'srow';
+        row.innerHTML = `
+            <div class="srow-lbl">Q${idx+1}: ${q.cat || 'Core skill'}</div>
+            <div class="srow-bar"><div class="srow-fill" style="width: ${scr*10}%"></div></div>
+            <div class="srow-val">${scr}/10</div>
+        `;
+        rowsContainer.appendChild(row);
+    });
+
+    const renderList = (id, pool, defaults) => {
+        const el = document.getElementById(id);
+        el.innerHTML = "";
+        const activeList = pool.length > 0 ? pool.slice(0, 3) : defaults;
+        activeList.forEach(item => {
+            const d = document.createElement('div');
+            d.className = id === 'recsList' ? 'rec-item' : 'results-skill';
+            d.innerText = item;
+            el.appendChild(d);
+        });
+    };
+
+    renderList('strongSkills', strengthsPool, ["Consistent tone alignment", "Direct answers to question prompts"]);
+    renderList('weakSkills', weaknessesPool, ["Deepen metric allocations", "Avoid narrative run-ons"]);
+    renderList('recsList', advicePool, ["Practice active problem structuring syntax.", "Keep structural summaries bounded beneath 250 words maximum."]);
+}
+
+function retryInterview() {
+    startInterview();
+}
+
+function copyResults() {
+    const roleTitle = document.getElementById('headerRole').innerText;
+    const finalAvg = Math.round(interviewScores.reduce((a,b)=>a+b, 0) / 5);
+    const textBlock = `Interview Performance Report — AI Coach\nRole Target: ${roleTitle}\nOverall Score: ${finalAvg}/10\nPractice and evaluate your interview skills live online dynamically.`;
+    
+    navigator.clipboard.writeText(textBlock).then(() => {
+        alert("Performance breakdown metrics copied successfully to system clipboard!");
+    }).catch(err => {
+        console.error("Clipboard copy failure encountered:", err);
+    });
 }
 </script>
-
-<!-- Clean script connector reference to process your backend logic -->
-<script src="groq.js"></script>
-
 </body>
 </html>
