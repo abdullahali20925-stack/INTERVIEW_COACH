@@ -1,86 +1,254 @@
-I need you to debug my project instead of rewriting it. 
+// ==========================================
+// 1. GLOBAL STATE & CONFIGURATION
+// ==========================================
+const WORKER_URL = "https://interviewcoach.abdullahali20925.workers.dev/";
 
-### Core Context & Problem
-* **The Issue:** Clicking the "Begin Interview" button on the live site does absolutely nothing.
-* **The Root Cause:** My external file (`gemini.js`) contains a duplicate function `window.startInterview = async function() { ... }` that completely overwrites the native `startInterview()` declared in my `index.html`. 
-* **The Conflict:** This broken external script is designed for a completely foreign layout—it looks for obsolete DOM IDs like `job-field`, `exp-level`, and `company-type` which do not exist in my actual HTML, causing immediate runtime script execution crashes. 
-* **The Typo:** In both files, the proxy variable contains a spelling mistake: `"https://inrerviewcoach.abdullahali20925.workers.dev"` (using an extra 'r' instead of a 't' in "interviewcoach").
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let userAnswers = [];
 
----
+// ==========================================
+// 2. CORE INTERVIEW FLOW PIPELINE
+// ==========================================
 
-### What I Want You to Do (Strict Constraints)
-1. **Read BOTH provided file contents entirely before suggesting modifications.**
-2. **Do NOT redesign the user interface.**
-3. **Do NOT rewrite or alter my existing UI configuration frameworks.**
-4. **Preserve every feature** (including the built-in dropdown event triggers, screen managers, arrays, and step-rendering calculations).
-5. **Fix the function collision properly:** Remove the destructive `window.startInterview` block from the script completely. Let the native `startInterview()` in `index.html` handle all the screen changes, role detection, and shuffling algorithms.
-6. **Isolate the API Layer:** Repurpose the external script strictly to act as an asynchronous network runner that connects with the Cloudflare Worker proxy.
-7. **Ensure the final configuration is fully operational on GitHub Pages.**
+/**
+ * Single-entrypoint: Kicks off the process by fetching 
+ * custom questions dynamically from the Cloudflare Worker backend.
+ */
+async function startInterview() {
+    // Read selections dynamically from your existing HTML UI controls
+    const roleInput = document.getElementById("job-role") || document.getElementById("role");
+    const difficultyInput = document.getElementById("difficulty");
+    const countInput = document.getElementById("question-count") || { value: 5 };
 
----
+    const role = roleInput ? roleInput.value.trim() : "Software Engineer";
+    const difficulty = difficultyInput ? difficultyInput.value : "intermediate";
+    const count = countInput ? parseInt(countInput.value, 10) : 5;
 
-### File 1: My Current External JavaScript File (`gemini.js`)
-```javascript
-const PROXY_URL = "[https://inrerviewcoach.abdullahali20925.workers.dev](https://inrerviewcoach.abdullahali20925.workers.dev)";
-
-// This makes the function globally available for your HTML button's onclick attribute
-window.startInterview = async function() {
-    // 1. Hook into your HTML elements (checking common ID variations)
-    const beginBtn = document.getElementById("begin-btn") || document.getElementById("generate-btn") || document.querySelector("button[onclick*='startInterview']");
-    const outputBox = document.getElementById("output-box") || document.getElementById("output-container") || document.getElementById("response-container");
-
-    // 2. Grab inputs from your dropdown select menus or input boxes
-    const jobField = document.getElementById("job-field")?.value || document.getElementById("career-field")?.value || "Software Engineering";
-    const expLevel = document.getElementById("exp-level")?.value || document.getElementById("experience-level")?.value || "Entry Level";
-    const compType = document.getElementById("company-type")?.value || document.getElementById("company")?.value || "Tech Company";
-
-    // Prevent double clicking and show loading status
-    if (beginBtn) {
-        beginBtn.disabled = true;
-        beginBtn.innerText = "Connecting to Coach...";
-    }
-    if (outputBox) {
-        outputBox.innerHTML = "<p style='color: #666;'>Analyzing industry interview standards and generating your custom questions...</p>";
-    }
+    // Trigger existing UI transitions / loading animations
+    showLoadingState(true);
 
     try {
-        // 3. Talk safely to your Cloudflare Worker proxy
-        const response = await fetch(PROXY_URL, {
+        const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                field: jobField,
-                experience: expLevel,
-                company: compType
+                action: "generate_interview",
+                role: role,
+                difficulty: difficulty,
+                count: count
             })
         });
 
         if (!response.ok) {
-            throw new Error(`Cloudflare returned status code ${response.status}`);
+            throw new Error(`Worker returned error status: ${response.status}`);
         }
 
         const result = await response.json();
 
-        // 4. Extract the Groq text content out of the response payload
-        const rawText = result.choices[0].message.content;
+        // Requirement: Explicitly read result.questions directly from the core payload
+        if (!result.questions || !Array.isArray(result.questions)) {
+            throw new Error("Invalid response format received from AI Worker.");
+        }
 
-        // 5. Display the questions cleanly on your page
-        if (outputBox) {
-            outputBox.innerHTML = `<div class="interview-questions" style="line-height: 1.6; color: #333;">${rawText.replace(/\n/g, "<br>")}</div>`;
+        // Initialize session parameters in global memory
+        currentQuestions = result.questions;
+        currentQuestionIndex = 0;
+        userAnswers = [];
+
+        // Hide loading state and display first question using existing UI layout mechanisms
+        showLoadingState(false);
+        switchToInterviewScreen();
+        displayQuestion();
+
+    } catch (error) {
+        showLoadingState(false);
+        alert(`Failed to start interview: ${error.message}`);
+        console.error("Initialization Error:", error);
+    }
+}
+
+/**
+ * Renders the active in-memory question down into the existing DOM text container slots.
+ */
+function displayQuestion() {
+    if (currentQuestions.length === 0) return;
+
+    const currentData = currentQuestions[currentQuestionIndex];
+    
+    // Wire context into your existing HTML layout element IDs
+    const questionTextEl = document.getElementById("question-text");
+    const questionNumEl = document.getElementById("question-number");
+    const categoryEl = document.getElementById("question-category");
+    const answerInputEl = document.getElementById("answer-input") || document.getElementById("candidate-answer");
+
+    if (questionTextEl) questionTextEl.innerText = currentData.question;
+    if (questionNumEl) questionNumEl.innerText = `Question ${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+    if (categoryEl) categoryEl.innerText = currentData.category || "General";
+    
+    // Flush response input placeholder text box for the incoming question step
+    if (answerInputEl) answerInputEl.value = "";
+}
+
+/**
+ * Dispatches active question context alongside candidate text inputs back to the Worker engine.
+ */
+async function submitAnswer() {
+    const answerInputEl = document.getElementById("answer-input") || document.getElementById("candidate-answer");
+    const answerText = answerInputEl ? answerInputEl.value.trim() : "";
+
+    if (!answerText) {
+        alert("Please write or provide an answer before submitting.");
+        return;
+    }
+
+    const currentData = currentQuestions[currentQuestionIndex];
+    const roleInput = document.getElementById("job-role") || document.getElementById("role");
+    const difficultyInput = document.getElementById("difficulty");
+
+    const role = roleInput ? roleInput.value.trim() : "Software Engineer";
+    const difficulty = difficultyInput ? difficultyInput.value : "intermediate";
+
+    showSubmittingState(true);
+
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                action: "evaluate_answer",
+                role: role,
+                difficulty: difficulty,
+                question: currentData.question,
+                answer: answerText
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Evaluation failed with status: ${response.status}`);
+        }
+
+        const evaluationResult = await response.json();
+
+        // Append current results directly into session memory
+        userAnswers.push({
+            question: currentData.question,
+            answer: answerText,
+            evaluation: evaluationResult // Stores structure containing score, strengths, weaknesses, suggestions
+        });
+
+        showSubmittingState(false);
+        
+        // Progress down the index queue or wrap up session tracking parameters
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentQuestions.length) {
+            displayQuestion();
+        } else {
+            navigateToFinalResultsView();
         }
 
     } catch (error) {
-        console.error("Interview generation error:", error);
-        if (outputBox) {
-            outputBox.innerHTML = `<p style="auto; color: #ff4d4d;">Could not load questions. Error details: ${error.message}</p>`;
-        }
-    } finally {
-        // Re-enable the button button
-        if (beginBtn) {
-            beginBtn.disabled = false;
-            beginBtn.innerText = "Begin Interview";
-        }
+        showSubmittingState(false);
+        alert(`Evaluation Connection Error: ${error.message}`);
+        console.error("Evaluation pipeline break:", error);
     }
+}
+
+// ==========================================
+// 3. UI VIEW & DOM LAYER INTERFACES
+// ==========================================
+
+/**
+ * Controls loader overlay rendering mechanics across runtime executions.
+ */
+function showLoadingState(isLoading) {
+    const loader = document.getElementById("loading-screen") || document.getElementById("loader");
+    const setups = document.getElementById("setup-screen") || document.getElementById("setup-container");
+    
+    if (loader) loader.style.display = isLoading ? "flex" : "none";
+    if (setups && isLoading) setups.style.display = "none";
+}
+
+/**
+ * Simple visibility control tracking intermediate evaluation delays.
+ */
+function showSubmittingState(isProcessing) {
+    const submitBtn = document.getElementById("submit-answer-btn") || document.getElementById("next-btn");
+    if (submitBtn) {
+        submitBtn.disabled = isProcessing;
+        submitBtn.innerText = isProcessing ? "Evaluating..." : "Submit Answer";
+    }
+}
+
+/**
+ * Displays active workspace fields while hiding pre-qualification menus.
+ */
+function switchToInterviewScreen() {
+    const setupScreen = document.getElementById("setup-screen") || document.getElementById("setup-container");
+    const interviewScreen = document.getElementById("interview-screen") || document.getElementById("interview-container");
+
+    if (setupScreen) setupScreen.style.display = "none";
+    if (interviewScreen) interviewScreen.style.display = "block";
+}
+
+/**
+ * Aggregates runtime data logs directly into your summary containers.
+ */
+function navigateToFinalResultsView() {
+    const interviewScreen = document.getElementById("interview-screen") || document.getElementById("interview-container");
+    const resultsScreen = document.getElementById("results-screen") || document.getElementById("results-container");
+    const reportCardsEl = document.getElementById("feedback-report-cards") || document.getElementById("feedback-container");
+
+    if (interviewScreen) interviewScreen.style.display = "none";
+    if (resultsScreen) resultsScreen.style.display = "block";
+
+    if (reportCardsEl) {
+        reportCardsEl.innerHTML = ""; // Wipe older layout instances safely
+        
+        let aggregatedScoreSum = 0;
+
+        userAnswers.forEach((record, index) => {
+            const score = record.evaluation.score || 0;
+            aggregatedScoreSum += score;
+
+            // Dynamically generate markdown-aligned cards using your native styling classes
+            const card = document.createElement("div");
+            card.className = "feedback-card review-item-block"; 
+            card.innerHTML = `
+                <h3>Question ${index + 1}: ${record.question}</h3>
+                <p><strong>Your Answer:</strong> <em>${record.answer}</em></p>
+                <div class="score-badge">Score: <strong>${score}/10</strong></div>
+                <p><strong>Strengths:</strong> ${record.evaluation.strengths || "N/A"}</p>
+                <p><strong>Weaknesses:</strong> ${record.evaluation.weaknesses || "N/A"}</p>
+                <p><strong>Suggestions:</strong> ${record.evaluation.suggestions || "N/A"}</p>
+                <p><strong>Model Ideal Answer:</strong> <br><code style="white-space: pre-wrap; display:block; padding:8px; margin-top:5px; background:#f4f4f5; border-radius:4px;">${record.evaluation.modelAnswer || "N/A"}</code></p>
+                <hr />
+            `;
+            reportCardsEl.appendChild(card);
+        });
+
+        // Compute average score across items
+        const finalAverageScore = userAnswers.length > 0 ? (aggregatedScoreSum / userAnswers.length).toFixed(1) : 0;
+        const totalScoreEl = document.getElementById("total-score") || document.getElementById("final-score-display");
+        if (totalScoreEl) totalScoreEl.innerText = `${finalAverageScore} / 10`;
+    }
+}
+
+/**
+ * Soft resetting parameters to re-initialize configuration views smoothly.
+ */
+function resetInterviewSystem() {
+    const setupScreen = document.getElementById("setup-screen") || document.getElementById("setup-container");
+    const resultsScreen = document.getElementById("results-screen") || document.getElementById("results-container");
+
+    if (resultsScreen) resultsScreen.style.display = "none";
+    if (setupScreen) setupScreen.style.display = "block";
+    
+    currentQuestions = [];
+    currentQuestionIndex = 0;
+    userAnswers = [];
 }
