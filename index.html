@@ -961,11 +961,15 @@ async function startInterview() {
             })
         });
 
-        if (!response.ok) throw new Error("Could not parse AI response cluster.");
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Worker returned HTTP ${response.status}: ${errText}`);
+        }
+        
         const data = await response.json();
         
-        if (!data.questions || data.questions.length === 0) {
-            throw new Error("Invalid question configuration array formatting payload.");
+        if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
+            throw new Error(`Invalid JSON structure received. Payload: ${JSON.stringify(data)}`);
         }
 
         currentQuestions = data.questions;
@@ -980,8 +984,8 @@ async function startInterview() {
         loadQuestion();
 
     } catch (err) {
-        console.error("Initialization runner failure configuration:", err);
-        alert("Failed to initialize dynamic live AI interview session. Please verify connection credentials.");
+        console.error("Detailed Debug Error Context:", err);
+        alert(`Application Error: ${err.message}`);
     } finally {
         startBtn.disabled = false;
         startBtn.innerText = "Begin interview →";
@@ -1038,20 +1042,24 @@ async function submitAnswer() {
             })
         });
 
-        if (!response.ok) throw new Error("Evaluation pipeline failed parsing status runner.");
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Evaluation pipeline failed with HTTP ${response.status}: ${errText}`);
+        }
+        
         const parsed = await response.json();
-
         renderFeedback(parsed);
         
     } catch (err) {
-        console.error("Evaluation pipeline failed:", err);
+        console.error("Evaluation failure:", err);
+        alert(`Evaluation Error: ${err.message}`);
         renderFeedback({
-            score: 7,
-            tags: ["Completed"],
-            strengths: "Your answer shows baseline domain competency and answers the question details.",
-            gaps: "Could use more specific project structural matrices like the STAR framework design layout metrics.",
-            suggestion: "Add measurable data output metrics directly inside the contextual layout.",
-            modelTip: "Try utilizing structural phrasings such as: 'In my past deployment pipeline configuration setup, we encountered...'"
+            score: 5,
+            tags: ["Error Recovery"],
+            strengths: "System encountered an error parsing response content.",
+            weaknesses: "Could not evaluate metrics securely over the wire.",
+            suggestions: "Please review terminal logs to debug your internal proxy network.",
+            modelAnswer: "Verify your Cloudflare Worker environment variables or local network permissions."
         });
     } finally {
         submitBtn.innerHTML = "Get feedback";
