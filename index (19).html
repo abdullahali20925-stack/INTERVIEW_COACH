@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>InterviewCoach.ai — Practice real interviews with AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0F1E;--s1:#111833;--s2:#172042;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--tx:#EEF1FA;--mu:#97A1BE;--dim:#5B6685;--acc:#5B8CFF;--acc2:#3E6FEA;--accbg:rgba(91,140,255,.14);--gold:#F0C16A;--goldbg:rgba(240,193,106,.12);--ok:#5FD3A0;--warn:#F2B45A;--bad:#F26D6D;--r:14px;--serif:'Fraunces',Georgia,serif;--sans:'Manrope',system-ui,sans-serif;
+/* aliases for gemini.js */--blue:#5B8CFF;--blue-lt:#8FB0FF;--blue-bg:rgba(91,140,255,.14);--blue-bdr:rgba(91,140,255,.35);--green:#5FD3A0;--green-bg:rgba(95,211,160,.12);--amber:#F2B45A;--amber-bg:rgba(242,180,90,.12);--red:#F26D6D;--red-bg:rgba(242,109,109,.12);--purple:#B08BFF;--t1:#EEF1FA;--t2:#97A1BE;--t3:#5B6685;--ink2:#111833;--ink3:#172042;--mono:var(--sans)}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:15px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;background-image:radial-gradient(60% 35% at 50% 0,rgba(91,140,255,.13),transparent 70%);background-repeat:no-repeat}
+button{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.screen{display:none;flex-direction:column;min-height:100vh}.screen.active{display:flex}
+.shell{width:100%;max-width:560px;margin:0 auto;padding:0 18px}
+.btn-primary,.submit-btn{background:var(--acc);color:#07102A;border:0;border-radius:var(--r);padding:14px 26px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,transform .1s}
+.btn-primary:hover:not(:disabled),.submit-btn:hover:not(:disabled){background:#7FA3FF}.btn-primary:active,.submit-btn:active{transform:scale(.98)}
+.btn-primary:disabled,.submit-btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#2A1D00}.btn-gold:hover:not(:disabled){background:#F7D28C}
+.btn-ghost,.skip-btn{background:none;border:1px solid var(--line2);color:var(--mu);border-radius:var(--r);padding:13px 20px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-ghost:hover,.skip-btn:hover{color:var(--tx);border-color:var(--acc)}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.chip-blue{background:var(--blue-bg);color:var(--blue-lt)}.chip-green{background:var(--green-bg);color:var(--ok)}.chip-amber{background:var(--amber-bg);color:var(--warn)}.chip-red{background:var(--red-bg);color:var(--bad)}.chip-purple{background:rgba(176,139,255,.14);color:var(--purple)}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(7,16,42,.25);border-top-color:#07102A;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+/* HOME */
+#landing{padding-bottom:96px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px}
+.logo{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-.3px}.logo span{color:var(--acc)}
+.plan{border:1px solid var(--line2);background:var(--s1);color:var(--mu);font-size:13px;font-weight:700;padding:7px 14px;border-radius:30px;cursor:pointer}
+body[data-plan=pro] .plan{border-color:var(--gold);color:var(--gold);background:var(--goldbg)}
+.hero{margin:14px 0 14px;padding:26px 22px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(160deg,var(--s2),var(--s1))}
+.hero h1{font-family:var(--serif);font-size:clamp(30px,8vw,38px);line-height:1.12;font-weight:600;letter-spacing:-.8px}
+.hero p{color:var(--mu);margin:12px 0 20px;max-width:40ch}
+.usage{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--s1);margin-bottom:22px}
+.usage>div{flex:1}.usage b{font-size:13px;font-weight:600}.bar{height:5px;background:var(--line);border-radius:5px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:5px;transition:width .4s}
+.link{background:none;border:0;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+body[data-plan=pro] .usage{display:none}
+.sec-h{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:-.4px}.sec-s{color:var(--mu);font-size:14px;margin:2px 0 16px}
+.diff-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.diff-btn{background:var(--s1);border:1px solid var(--line);color:var(--mu);border-radius:12px;padding:11px 6px;font-size:13px;font-weight:600;cursor:pointer;position:relative}
+.diff-btn.active{background:var(--accbg);border-color:var(--acc);color:var(--tx)}
+.pro{font-size:10px;font-weight:800;color:var(--gold);background:var(--goldbg);border-radius:6px;padding:1px 6px;margin-left:4px}
+.roles-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-card{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);background:var(--s1);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s}
+.role-card:hover{border-color:var(--line2)}.role-card.selected{border-color:var(--acc);background:var(--accbg)}
+.ri{width:40px;height:40px;flex:none;border-radius:11px;background:var(--s2);display:grid;place-items:center;font-size:20px}
+.role-card-title{font-size:13.5px;font-weight:700;line-height:1.25}.role-card-count{font-size:12px;color:var(--dim)}
+.custom-role-input{width:100%;margin-top:10px;background:var(--s1);border:1px solid var(--line2);border-radius:var(--r);padding:13px 15px;color:var(--tx);font:inherit;font-size:14px}
+.start-row{margin-top:18px}.start-row .btn-primary{width:100%}
+.upsell{margin-top:26px;padding:22px;border-radius:20px;border:1px solid rgba(240,193,106,.35);background:linear-gradient(160deg,rgba(240,193,106,.13),rgba(240,193,106,.03))}
+body[data-plan=pro] .upsell{display:none}
+.upsell h3{font-family:var(--serif);font-size:22px;font-weight:600}.upsell ul{list-style:none;margin:12px 0 16px;display:grid;gap:7px;color:var(--mu);font-size:14px}
+.upsell li::before,.plist li::before{content:'✓';color:var(--gold);font-weight:800;margin-right:9px}
+.upsell .btn-primary{width:100%}
+.panel{display:none}.panel.on{display:block;animation:fadeUp .25s}
+.hist{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--line);background:var(--s1);border-radius:var(--r);margin-bottom:10px}
+.hist .g{font-family:var(--serif);font-size:30px;width:46px;text-align:center;color:var(--acc)}.hist small{color:var(--dim);display:block}
+.empty{text-align:center;color:var(--mu);padding:40px 10px}.empty .btn-primary{margin-top:16px}
+.lockbox{position:relative;border:1px solid var(--line);border-radius:20px;background:var(--s1);padding:22px;overflow:hidden}
+.lockbox .fake{filter:blur(6px);display:flex;align-items:flex-end;gap:10px;height:120px}.lockbox .fake i{flex:1;background:var(--acc);border-radius:6px 6px 0 0;opacity:.8}
+.lockbox .cover{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:10px;background:rgba(10,15,30,.55);padding:20px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat div{padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--s1)}.stat b{font-family:var(--serif);font-size:28px;display:block}.stat span{color:var(--mu);font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(10,15,30,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom,0)}
+.tabs div{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tab{background:none;border:0;padding:10px 0 9px;display:grid;justify-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--dim);cursor:pointer}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tab.on{color:var(--acc)}
+/* PAYWALL */
+.sheet-bg{position:fixed;inset:0;background:rgba(3,6,16,.7);z-index:50;display:none;align-items:flex-end;justify-content:center}.sheet-bg.on{display:flex}
+.sheet{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--s1);border:1px solid var(--line2);border-radius:24px 24px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom,0));animation:fadeUp .25s}
+.sheet h2{font-family:var(--serif);font-size:26px;line-height:1.15;font-weight:600}.sheet .why{color:var(--mu);margin:6px 0 18px;font-size:14px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:14px}
+.seg button{border:0;background:none;padding:10px;border-radius:9px;font-weight:700;font-size:13px;color:var(--mu);cursor:pointer}.seg button.on{background:var(--s2);color:var(--tx)}
+.price{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}.price b{font-family:var(--serif);font-size:44px;font-weight:600}.price span{color:var(--mu)}
+.save{color:var(--ok);font-size:13px;font-weight:700;min-height:20px;margin-bottom:12px}
+.plist{list-style:none;display:grid;gap:9px;margin:0 0 20px;font-size:14px}
+.sheet .btn-primary{width:100%}.fine{text-align:center;color:var(--dim);font-size:12px;margin-top:12px}
+.x{float:right;background:none;border:0;color:var(--mu);font-size:22px;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--s2);border:1px solid var(--line2);padding:11px 16px;border-radius:12px;font-size:13px;z-index:60;display:none;max-width:90%}
+/* INTERVIEW */
+.int-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(10,15,30,.9);position:sticky;top:0;z-index:5}
+.int-role-pill{font-weight:700;font-size:13px;white-space:nowrap}.int-diff-pill{font-size:12px;color:var(--gold);white-space:nowrap}
+.int-progress-section{flex:1;min-width:60px}.int-progress-bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden}.int-progress-fill{height:100%;background:var(--acc);transition:width .4s}.int-progress-text{font-size:11px;color:var(--dim);margin-top:3px}
+.int-quit-btn{background:none;border:0;color:var(--mu);font-size:13px;cursor:pointer;white-space:nowrap}
+.int-body{flex:1;width:100%;max-width:640px;margin:0 auto;padding:22px 18px 40px}
+.q-meta{display:flex;align-items:center;gap:8px;margin-bottom:12px}.q-meta-num{font-size:12px;color:var(--dim);font-weight:700}
+.q-card{background:linear-gradient(160deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:20px;padding:24px 22px;margin-bottom:20px}
+.q-text{font-family:var(--serif);font-size:22px;line-height:1.35;min-height:60px;font-weight:500}
+.q-cursor{display:inline-block;width:2px;height:1.1em;background:var(--acc);margin-left:2px;vertical-align:text-bottom;animation:blink 1s infinite}
+.meter-wrap{display:flex;align-items:center;gap:10px;margin-bottom:14px}.meter-lbl,.meter-val{font-size:12px;color:var(--dim)}.meter-val{color:var(--mu);min-width:30px;text-align:right}
+.meter-track{flex:1;height:4px;background:var(--line);border-radius:4px;overflow:hidden}.meter-bar{height:100%;width:0;background:var(--acc);transition:width .3s,background .3s}
+.answer-lbl{font-size:13px;font-weight:700;margin-bottom:8px}
+.answer-box{width:100%;background:var(--s1);border:1px solid var(--line2);border-radius:var(--r);padding:15px 16px;color:var(--tx);font:inherit;font-size:15px;line-height:1.7;resize:none;min-height:150px}
+.answer-box:focus{outline:none;border-color:var(--acc)}.answer-box::placeholder{color:var(--dim)}.answer-box:disabled{opacity:.5}
+.answer-footer{display:flex;justify-content:space-between;margin:6px 0 16px;font-size:12px;color:var(--dim)}
+.action-row{display:flex;gap:10px}.submit-btn{flex:1}
+.feedback-panel{display:none;margin-top:24px;background:var(--s1);border:1px solid var(--line);border-radius:20px;overflow:hidden;animation:fadeUp .3s}.feedback-panel.visible{display:block}
+.fb-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;background:var(--s2)}
+.fb-score{font-family:var(--serif);font-size:30px;padding:2px 14px;border-radius:12px}.fb-score.hi{background:var(--green-bg);color:var(--ok)}.fb-score.mid{background:var(--amber-bg);color:var(--warn)}.fb-score.lo{background:var(--red-bg);color:var(--bad)}
+.fb-tags{display:flex;gap:6px;flex-wrap:wrap}.fb-body{padding:18px 20px;display:grid;gap:18px}
+.fb-block-lbl{font-size:13px;font-weight:700;margin-bottom:4px}.fb-block-lbl.green{color:var(--ok)}.fb-block-lbl.amber{color:var(--warn)}.fb-block-lbl.blue{color:var(--blue-lt)}.fb-block-lbl.purple{color:var(--gold)}
+.fb-block-text{font-size:14px;color:var(--mu);line-height:1.7}
+.fb-example-box{border-left:3px solid var(--gold);background:var(--goldbg);border-radius:0 12px 12px 0;padding:14px 16px;font-size:14px;color:var(--tx);line-height:1.7}
+.fb-lock{position:relative}.unlock{display:none}
+body[data-plan=free] .fb-lock .fb-example-box{filter:blur(6px);user-select:none}
+body[data-plan=free] .unlock{display:inline-flex;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;padding:10px 18px;font-size:13px}
+.next-q-btn{display:block;width:calc(100% - 40px);margin:0 20px 20px;background:none;border:1px solid var(--acc);color:var(--blue-lt);border-radius:var(--r);padding:13px;font-size:14px;font-weight:700;cursor:pointer}.next-q-btn:hover{background:var(--accbg)}
+/* RESULTS */
+#results{padding:22px 18px 40px}.results-wrap{max-width:600px;width:100%;margin:0 auto}
+.results-top{text-align:center;background:linear-gradient(160deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:22px;padding:34px 20px;margin-bottom:14px}
+.results-grade{font-family:var(--serif);font-size:88px;line-height:1;font-weight:600;margin:6px 0}.results-grade.A{color:var(--ok)}.results-grade.B{color:var(--blue-lt)}.results-grade.C{color:var(--warn)}.results-grade.D{color:var(--bad)}
+.results-role{font-size:13px;color:var(--mu)}.results-verdict{font-family:var(--serif);font-size:24px;font-weight:600}.results-subtitle{font-size:14px;color:var(--mu);margin-top:4px}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.results-card,.score-breakdown-list,.recs-card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:0}.score-breakdown-list,.recs-card{margin-bottom:14px}
+.results-card-lbl,.score-breakdown-lbl,.recs-card-lbl{font-size:13px;font-weight:700;margin-bottom:12px}
+.results-skill-list{display:grid;gap:7px}.results-skill{font-size:13.5px;color:var(--mu)}.results-skill::before{content:'•';color:var(--acc);margin-right:8px}
+.srow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.srow:last-child{border:0}.srow-lbl{flex:1;font-size:13.5px;color:var(--mu)}.srow-bar{flex:2;height:5px;background:var(--line);border-radius:3px;overflow:hidden}.srow-fill{height:100%;background:var(--acc);border-radius:3px;transition:width 1s}.srow-val{font-size:13px;font-weight:700;min-width:36px;text-align:right}
+.rec-item{display:flex;gap:10px;font-size:14px;color:var(--mu);padding:8px 0;border-bottom:1px solid var(--line)}.rec-item:last-child{border:0}.rec-num{color:var(--acc);font-weight:700}
+.results-actions{display:grid;gap:10px}
+@media(max-width:420px){.results-grid{grid-template-columns:1fr}.int-diff-pill{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body data-plan="free">
+<div id="landing" class="screen active"><div class="shell">
+  <header class="top"><div class="logo">InterviewCoach<span>.ai</span></div><button class="plan" id="planBtn" onclick="openPaywall()">Free plan</button></header>
+
+  <section class="panel on" id="p-home">
+    <div class="hero">
+      <h1>Walk into your next interview already practiced.</h1>
+      <p>Answer role-specific questions and get a score, clear feedback and a stronger sample answer for each one.</p>
+      <a href="#pick-role" class="btn-primary" style="text-decoration:none">Start practicing</a>
+    </div>
+    <div class="usage"><div><b id="usageText">3 free interviews left today</b><div class="bar"><i id="usageBar" style="width:100%"></i></div></div><button class="link" onclick="openPaywall()">Go Pro</button></div>
+
+    <h2 class="sec-h" id="pick-role">Choose your role and level</h2>
+    <p class="sec-s">Questions adapt to the difficulty you select.</p>
+    <div class="diff-row">
+      <button class="diff-btn active" data-diff="beginner" onclick="setDiff(this)">🌱 Beginner</button>
+      <button class="diff-btn" data-diff="intermediate" onclick="setDiff(this)">⚡ Intermediate</button>
+      <button class="diff-btn" data-diff="advanced" onclick="setDiff(this)">🔥 Advanced<span class="pro" data-lock>Pro</span></button>
+    </div>
+    <div class="roles-grid" id="rolesGrid"></div>
+    <div id="customWrap" style="display:none"><input type="text" class="custom-role-input" id="customRoleInput" placeholder="Your role, e.g. DevOps Engineer or Project Manager" oninput="onCustomInput()"></div>
+    <div class="start-row"><button class="btn-primary" id="startBtn" disabled onclick="startInterview()">Begin interview</button></div>
+
+    <div class="upsell">
+      <h3>Practice without limits with Pro</h3>
+      <ul><li>Unlimited interviews every day</li><li>Advanced level and any custom role</li><li>Full model answers for every question</li><li>Progress history and skill insights</li></ul>
+      <button class="btn-primary btn-gold" onclick="openPaywall()">See Pro plans</button>
+    </div>
+  </section>
+
+  <section class="panel" id="p-history"><h2 class="sec-h">History</h2><p class="sec-s">Your finished interviews.</p><div id="histList"></div></section>
+
+  <section class="panel" id="p-insights"><h2 class="sec-h">Insights</h2><p class="sec-s">See how your scores improve over time.</p>
+    <div id="insLocked" class="lockbox"><div class="fake"><i style="height:35%"></i><i style="height:50%"></i><i style="height:44%"></i><i style="height:70%"></i><i style="height:85%"></i></div>
+      <div class="cover"><b>Track your progress with Pro</b><button class="btn-primary btn-gold" onclick="openPaywall('insights')">Unlock insights</button></div></div>
+    <div id="insOpen" style="display:none"><div class="stat"><div><b id="insN">0</b><span>Interviews finished</span></div><div><b id="insBest">–</b><span>Best grade</span></div></div></div>
+  </section>
+
+  <section class="panel" id="p-profile"><h2 class="sec-h">Profile</h2><p class="sec-s">Your plan and data.</p>
+    <div class="row"><span>Current plan</span><b id="profPlan">Free</b></div>
+    <div class="row"><span>Interviews today</span><b id="profUse">0</b></div>
+    <div class="row"><span>Clear my history</span><button class="link" style="color:var(--bad)" onclick="clearData()">Clear</button></div>
+    <button class="btn-primary btn-gold" style="width:100%;margin-top:20px" onclick="openPaywall()">Upgrade to Pro</button>
+  </section>
+</div>
+<nav class="tabs"><div>
+  <button class="tab on" data-t="home" onclick="showTab('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="tab" data-t="history" onclick="showTab('history')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+  <button class="tab" data-t="insights" onclick="showTab('insights')"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Insights</button>
+  <button class="tab" data-t="profile" onclick="showTab('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile</button>
+</div></nav></div>
+
+<div id="interview" class="screen">
+  <div class="int-header">
+    <div class="int-role-pill" id="headerRole">–</div>
+    <div class="int-diff-pill" id="headerDiff">–</div>
+    <div class="int-progress-section">
+      <div class="int-progress-bar">
+        <div class="int-progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="int-progress-text" id="progressText">Question 1 of 5</div>
+    </div>
+    <button class="int-quit-btn" onclick="goHome()">✕ Exit</button>
+  </div>
+
+  <div class="int-body">
+    <div class="q-meta">
+      <span class="q-meta-num" id="qNum">Q1</span>
+      <span class="chip chip-blue" id="qCategory">Technical</span>
+    </div>
+
+    <div class="q-card">
+      <div class="q-text" id="qText">—</div>
+    </div>
+
+    <div class="meter-wrap">
+      <span class="meter-lbl">Strength</span>
+      <div class="meter-track"><div class="meter-bar" id="meterBar"></div></div>
+      <span class="meter-val" id="meterVal">—</span>
+    </div>
+
+    <div class="answer-lbl">Your answer</div>
+    <textarea class="answer-box" id="answerBox" rows="5"
+      placeholder="Write your answer here… Aim for 80–200 words. Use specific examples where possible."
+      oninput="onAnswerType()" maxlength="3000"></textarea>
+    <div class="answer-footer">
+      <span class="word-count"><span id="wordCount">0</span> words</span>
+      <span class="word-hint">Aim for 80–200 words</span>
+    </div>
+
+    <div class="action-row">
+      <button class="submit-btn" id="submitBtn" disabled onclick="submitAnswer()">
+        Get feedback
+      </button>
+      <button class="skip-btn" onclick="skipQuestion()">Skip</button>
+    </div>
+
+    <div class="feedback-panel" id="feedbackPanel">
+      <div class="fb-top">
+        <div class="fb-score" id="fbScore">–/10</div>
+        <div class="fb-tags" id="fbTags"></div>
+      </div>
+      <div class="fb-body">
+        <div class="fb-block">
+          <div class="fb-block-lbl green">✓ Strengths</div>
+          <div class="fb-block-text" id="fbStrengths">–</div>
+        </div>
+        <div class="fb-block">
+          <div class="fb-block-lbl amber">⚠ Areas to improve</div>
+          <div class="fb-block-text" id="fbWeaknesses">–</div>
+        </div>
+        <div class="fb-block">
+          <div class="fb-block-lbl blue">💡 Suggested improvement</div>
+          <div class="fb-block-text" id="fbSuggestion">–</div>
+        </div>
+        <div class="fb-block">
+          <div class="fb-block-lbl purple">★ Example of a stronger answer</div>
+          <div class="fb-lock"><div class="fb-example-box" id="fbExample">–</div><button class="btn-primary btn-gold unlock" onclick="openPaywall('model')">🔒 Unlock model answer</button></div>
+        </div>
+      </div>
+      <button class="next-q-btn" id="nextQBtn" onclick="nextQuestion()">Next question →</button>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen">
+  <div class="results-wrap">
+    <div class="results-top">
+      <div class="results-role" id="resultsRole">–</div>
+      <div class="results-grade" id="resultsGrade">–</div>
+      <div class="results-verdict" id="resultsVerdict">–</div>
+      <div class="results-subtitle" id="resultsSubtitle">–</div>
+    </div>
+
+    <div class="results-grid">
+      <div class="results-card">
+        <div class="results-card-lbl">💪 Strongest skills</div>
+        <div class="results-skill-list" id="strongSkills">–</div>
+      </div>
+      <div class="results-card">
+        <div class="results-card-lbl">📈 Skills to develop</div>
+        <div class="results-skill-list" id="weakSkills">–</div>
+      </div>
+    </div>
+
+    <div class="score-breakdown-list">
+      <div class="score-breakdown-lbl">Score breakdown</div>
+      <div id="scoreRows">–</div>
+    </div>
+
+    <div class="recs-card">
+      <div class="recs-card-lbl">🎯 Improvement recommendations</div>
+      <div id="recsList">–</div>
+    </div>
+
+    <div class="results-actions">
+      <button class="btn-primary" onclick="retryInterview()">Practice again →</button>
+      <button class="btn-ghost" onclick="goHome()">← Choose a different role</button>
+      <button class="btn-ghost" onclick="copyResults()">📋 Copy results to share</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheetBg" onclick="if(event.target===this)closePaywall()"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT">
+  <button class="x" onclick="closePaywall()" aria-label="Close">×</button>
+  <h2 id="sheetT">Upgrade to Pro</h2><p class="why" id="sheetWhy"></p>
+  <div class="seg"><button id="bm" onclick="setBilling('m')">Monthly</button><button id="by" class="on" onclick="setBilling('y')">Yearly</button></div>
+  <div class="price"><b id="priceNum">$59</b><span id="priceUnit">per year</span></div><div class="save" id="priceSave"></div>
+  <ul class="plist"><li>Unlimited daily interviews</li><li>Advanced difficulty and custom roles</li><li>Full model answer on every question</li><li>Interview history and progress insights</li></ul>
+  <button class="btn-primary btn-gold" id="buyBtn" onclick="buy()">Continue with Pro</button>
+  <p class="fine">Free plan: 3 interviews a day, Beginner and Intermediate. Cancel anytime.</p>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ROLES = [
+  { id:'swe',       icon:'💻', title:'Software Engineer',    count:'32 questions' },
+  { id:'teacher',   icon:'🏫', title:'Teacher',              count:'30 questions' },
+  { id:'accountant',icon:'📒', title:'Accountant',           count:'30 questions' },
+  { id:'nurse',     icon:'🩺', title:'Nurse',                count:'30 questions' },
+  { id:'sales',     icon:'🤝', title:'Sales Representative', count:'30 questions' },
+  { id:'marketing', icon:'📣', title:'Marketing Manager',    count:'31 questions' },
+  { id:'hr',        icon:'🧑‍💼', title:'HR Manager',           count:'30 questions' },
+  { id:'analyst',   icon:'📊', title:'Data Analyst',         count:'32 questions' },
+  { id:'custom',    icon:'✏️', title:'Other role',            count:'Custom' },
+];
+
+const QB = {
+  swe: [
+    { q:'Tell me about yourself and your programming background.', cat:'Introduction', diff:'beginner' },
+    { q:'What programming languages are you most comfortable with and why?', cat:'Technical', diff:'beginner' },
+    { q:'Can you explain the difference between an array and a linked list?', cat:'Technical', diff:'beginner' },
+    { q:'What is version control and why is it important?', cat:'Technical', diff:'beginner' },
+    { q:'Describe a personal or academic project you built. What did it do and what did you learn?', cat:'Behavioral', diff:'beginner' },
+    { q:'How do you approach debugging a piece of code that isn\'t working?', cat:'Problem Solving', diff:'beginner' },
+    { q:'What is the difference between frontend and backend development?', cat:'Technical', diff:'beginner' },
+    { q:'Tell me about a time you had to learn a new technology quickly. How did you handle it?', cat:'Behavioral', diff:'beginner' },
+    { q:'How do you ensure your code is readable by others?', cat:'Communication', diff:'beginner' },
+    { q:'What do you do when you\'re stuck on a problem for more than an hour?', cat:'Problem Solving', diff:'beginner' },
+    { q:'Walk me through how you would design a URL shortener service.', cat:'System Design', diff:'intermediate' },
+    { q:'Explain the concept of REST APIs and how you have used them.', cat:'Technical', diff:'intermediate' },
+    { q:'What is the difference between SQL and NoSQL databases? When would you use each?', cat:'Technical', diff:'intermediate' },
+    { q:'Describe a time a bug you introduced caused a significant problem. How did you resolve it?', cat:'Behavioral', diff:'intermediate' },
+    { q:'How do you approach code reviews — both when reviewing others\' code and receiving feedback?', cat:'Communication', diff:'intermediate' },
+    { q:'Explain the concept of time complexity. Give an example where choosing the wrong algorithm caused performance issues.', cat:'Technical', diff:'intermediate' },
+    { q:'Tell me about a time you disagreed with a technical decision on your team. What did you do?', cat:'Behavioral', diff:'intermediate' },
+    { q:'How do you balance writing tests versus shipping features quickly?', cat:'Problem Solving', diff:'intermediate' },
+    { q:'Describe a situation where you had to refactor a large piece of legacy code. What was your approach?', cat:'Situational', diff:'intermediate' },
+    { q:'How do you stay up to date with new technologies and best practices?', cat:'Communication', diff:'intermediate' },
+    { q:'Design a rate-limiting system that can handle millions of requests per day.', cat:'System Design', diff:'advanced' }
+  ]
+};
+/* ── CONFIG: edit prices and paste your payment links ── */
+const CONFIG={freeDaily:3,price:{m:9,y:59},links:{m:'',y:''}};
+const $=id=>document.getElementById(id);
+const rd=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const wr=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let selectedRole='',selectedDiff='beginner',plan=rd('ic_plan','free'),billing='y';
+const usage=()=>{const u=rd('ic_use',{});return u.d===new Date().toDateString()?u.n:0};
+const WHY={limit:"You've used today's free interviews. Go Pro to keep practicing.",advanced:'Advanced questions are part of Pro.',custom:'Practice any role you like with Pro.',model:'See a full model answer for every question.',insights:'Track your scores and skills over time.'};
+
+function setPlan(p){plan=p;wr('ic_plan',p);renderPlan()}
+function renderPlan(){
+  document.body.dataset.plan=plan;const left=Math.max(0,CONFIG.freeDaily-usage());
+  $('planBtn').textContent=plan==='pro'?'Pro ★':'Free plan';
+  $('usageText').textContent=left+(left===1?' free interview':' free interviews')+' left today';
+  $('usageBar').style.width=(left/CONFIG.freeDaily*100)+'%';
+  document.querySelectorAll('[data-lock]').forEach(e=>e.style.display=plan==='pro'?'none':'');
+  $('profPlan').textContent=plan==='pro'?'Pro':'Free';$('profUse').textContent=usage();
+  $('insLocked').style.display=plan==='pro'?'none':'block';$('insOpen').style.display=plan==='pro'?'block':'none';
+  renderHist();
+}
+function renderHist(){
+  const h=rd('ic_hist',[]);
+  $('histList').innerHTML=h.length?h.map(i=>`<div class="hist"><div class="g">${i.g}</div><div><b>${i.r}</b><small>${i.v} · ${new Date(i.t).toLocaleDateString()}</small></div></div>`).join(''):'<div class="empty">No interviews yet.<br>Finish one and it will show up here.<br><button class="btn-primary" onclick="showTab(\'home\')">Start practicing</button></div>';
+  $('insN').textContent=h.length;const o='ABCD';$('insBest').textContent=h.length?h.map(i=>i.g).sort((a,b)=>o.indexOf(a)-o.indexOf(b))[0]:'–';
+}
+function showTab(t){document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0)}
+function openPaywall(why){$('sheetWhy').textContent=WHY[why]||'Unlock everything InterviewCoach has to offer.';setBilling(billing);$('sheetBg').classList.add('on')}
+function closePaywall(){$('sheetBg').classList.remove('on')}
+function setBilling(b){billing=b;$('bm').classList.toggle('on',b==='m');$('by').classList.toggle('on',b==='y');
+  $('priceNum').textContent='$'+CONFIG.price[b];$('priceUnit').textContent=b==='m'?'per month':'per year';
+  $('priceSave').textContent=b==='y'?'That is about $'+(CONFIG.price.y/12).toFixed(2)+' a month — save '+Math.round(100-CONFIG.price.y/(CONFIG.price.m*12)*100)+'%':'';}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3500)}
+function buy(){const l=CONFIG.links[billing];if(l)location.href=l;else toast('Checkout is not connected yet. Add your payment link to CONFIG.links.')}
+function clearData(){wr('ic_hist',[]);renderHist();toast('History cleared')}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const g=$('rolesGrid');
+  ROLES.forEach(r=>{const d=document.createElement('div');d.className='role-card';d.id='card-'+r.id;d.tabIndex=0;d.onclick=()=>selectRole(r.id);d.onkeydown=e=>{if(e.key==='Enter')selectRole(r.id)};
+    d.innerHTML=`<span class="ri">${r.icon}</span><div><div class="role-card-title">${r.title}${r.id==='custom'?'<span class="pro" data-lock>Pro</span>':''}</div><div class="role-card-count">${r.count}</div></div>`;g.appendChild(d)});
+  renderPlan();
+});
+function selectRole(id){
+  if(id==='custom'&&plan==='free')return openPaywall('custom');
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));$('card-'+id).classList.add('selected');selectedRole=id;
+  $('customWrap').style.display=id==='custom'?'block':'none';checkStartValidity();
+}
+function setDiff(btn){
+  if(btn.dataset.diff==='advanced'&&plan==='free')return openPaywall('advanced');
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selectedDiff=btn.dataset.diff;
+}
+function onCustomInput(){checkStartValidity()}
+function checkStartValidity(){const b=$('startBtn');b.disabled=!selectedRole||(selectedRole==='custom'&&!$('customRoleInput').value.trim())}
+function goHome(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('landing').classList.add('active');showTab('home');renderPlan()}
+
+/* Free-plan limit: wraps startInterview from gemini.js */
+addEventListener('load',()=>{
+  const orig=window.startInterview;if(typeof orig!=='function')return;
+  window.startInterview=function(){
+    if(plan==='free'&&usage()>=CONFIG.freeDaily)return openPaywall('limit');
+    wr('ic_use',{d:new Date().toDateString(),n:usage()+1});renderPlan();return orig.apply(this,arguments)};
+});
+/* Save finished interviews to History */
+let saved=false;
+new MutationObserver(()=>{
+  const on=$('results').classList.contains('active');
+  if(on&&!saved){saved=true;setTimeout(()=>{const g=$('resultsGrade').textContent.trim();if(!/^[A-D]/.test(g))return;
+    const h=rd('ic_hist',[]);h.unshift({r:$('resultsRole').textContent,g:g[0],v:$('resultsVerdict').textContent,t:Date.now()});wr('ic_hist',h.slice(0,50));renderHist()},900)}
+  if(!on)saved=false;
+}).observe($('results'),{attributes:true,attributeFilter:['class']});
+</script>
+<script src="gemini.js"></script>
+</body>
+</html>
